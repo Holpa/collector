@@ -19,8 +19,12 @@ type (
 	}
 )
 
+func (col *HoppersCollection) GetCollection() *mongo.Collection {
+	return GetCollection(col.Connection, HOPPERS_COLLECTION)
+}
+
 func (col *HoppersCollection) Upsert(hopper models.HopperDocument) error {
-	collection := GetCollection(col.Connection, HOPPERS_COLLECTION)
+	collection := col.GetCollection()
 
 	upsert := true
 	_, err := collection.ReplaceOne(
