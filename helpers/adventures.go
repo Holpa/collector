@@ -50,32 +50,32 @@ func GetHopperRating(adventure constants.Adventure, hopper models.Hopper) int {
 }
 
 func CalculatePondRating(hopper models.Hopper) int {
-	return hopper.Strength * hopper.Level
+	return hopper.Strength
 }
 func CalculateStreamRating(hopper models.Hopper) int {
-	return hopper.Agility * hopper.Level
+	return hopper.Agility
 }
 func CalculateSwampRating(hopper models.Hopper) int {
-	return hopper.Vitality * hopper.Level
+	return hopper.Vitality
 }
 func CalculateRiverRating(hopper models.Hopper) int {
 	if !CanEnterRiver(hopper) {
 		return 0
 	}
 
-	return hopper.Strength * hopper.Intelligence * hopper.Level
+	return hopper.Strength * hopper.Intelligence
 }
 func CalculateForestRating(hopper models.Hopper) int {
 	if !CanEnterForest(hopper) {
 		return 0
 	}
 
-	return hopper.Agility * hopper.Vitality * hopper.Intelligence * hopper.Level
+	return hopper.Agility * hopper.Vitality * hopper.Intelligence
 }
 func CalculateGreatLakeRating(hopper models.Hopper) int {
 	if !CanEnterGreatLake(hopper) {
 		return 0
 	}
 
-	return hopper.Strength * hopper.Agility * hopper.Vitality * hopper.Intelligence * hopper.Level
+	return hopper.Strength * hopper.Agility * hopper.Vitality * hopper.Intelligence
 }
