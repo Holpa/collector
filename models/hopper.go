@@ -13,7 +13,6 @@ type (
 		Level        int
 		Image        string
 		Adventure    bool
-		Market       bool
 		Listings     []Listing
 	}
 
@@ -33,7 +32,6 @@ type (
 		Level             int     `bson:"level"`
 		Image             string  `bson:"image"`
 		Adventure         bool    `bson:"adventure"`
-		Market            bool    `bson:"market"`
 		CanEnterPond      bool    `bson:"canEnterPond"`
 		CanEnterStream    bool    `bson:"canEnterStream"`
 		CanEnterSwamp     bool    `bson:"canEnterSwamp"`

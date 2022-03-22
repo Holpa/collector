@@ -29,7 +29,6 @@ func HopperToHopperDocument(hopper models.Hopper) models.HopperDocument {
 		Level:             hopper.Level,
 		Image:             hopper.Image,
 		Adventure:         hopper.Adventure,
-		Market:            hopper.Market,
 		CanEnterPond:      true,
 		CanEnterStream:    true,
 		CanEnterSwamp:     true,
@@ -58,7 +57,6 @@ func HopperDocumentToHopper(hopperDocument models.HopperDocument) models.Hopper 
 		Level:        hopperDocument.Level,
 		Image:        hopperDocument.Image,
 		Adventure:    hopperDocument.Adventure,
-		Market:       hopperDocument.Market,
 		Listings: []models.Listing{{
 			Enabled: hopperDocument.ListingActive,
 			Sold:    false,

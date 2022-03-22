@@ -38,7 +38,6 @@ query($skip: Int!) {
 		vitality
 		intelligence
 		fertility
-		market
 		level
 		adventure
 		image
@@ -62,7 +61,6 @@ type (
 		Vitality     string `json:"vitality"`
 		Intelligence string `json:"intelligence"`
 		Fertility    string `json:"fertility"`
-		Market       bool   `json:"market"`
 		Level        string `json:"level"`
 		Adventure    bool   `json:"adventure"`
 		Image        string `json:"image"`
@@ -97,7 +95,6 @@ func parseHopper(hopperGraph HopperGraph) models.Hopper {
 		Vitality:     ParseInt(hopperGraph.Vitality),
 		Intelligence: ParseInt(hopperGraph.Intelligence),
 		Fertility:    ParseInt(hopperGraph.Fertility),
-		Market:       hopperGraph.Market,
 		Level:        ParseInt(hopperGraph.Level),
 		Adventure:    hopperGraph.Adventure,
 		Image:        hopperGraph.Image,
