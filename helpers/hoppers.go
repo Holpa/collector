@@ -1,10 +1,24 @@
 package helpers
 
 import (
+	"math"
+	"math/big"
+
 	"github.com/steschwa/hopper-analytics-collector/models"
 )
 
 func HopperToHopperDocument(hopper models.Hopper) models.HopperDocument {
+	listingActive := false
+	listingPrice := 0.0
+	for _, listing := range hopper.Listings {
+		if listing.Enabled && !listing.Sold {
+			listingActive = true
+			val, _ := listing.Price.Float64()
+			listingPrice = val * math.Pow(10, -18)
+			break
+		}
+	}
+
 	return models.HopperDocument{
 		TokenId:           hopper.TokenId,
 		Strength:          hopper.Strength,
@@ -28,6 +42,8 @@ func HopperToHopperDocument(hopper models.Hopper) models.HopperDocument {
 		RatingRiver:       CalculateRiverRating(hopper),
 		RatingForest:      CalculateForestRating(hopper),
 		RatingGreatLake:   CalculateGreatLakeRating(hopper),
+		ListingActive:     listingActive,
+		ListingPrice:      listingPrice,
 	}
 }
 
@@ -43,5 +59,10 @@ func HopperDocumentToHopper(hopperDocument models.HopperDocument) models.Hopper 
 		Image:        hopperDocument.Image,
 		Adventure:    hopperDocument.Adventure,
 		Market:       hopperDocument.Market,
+		Listings: []models.Listing{{
+			Enabled: hopperDocument.ListingActive,
+			Sold:    false,
+			Price:   big.NewFloat(hopperDocument.ListingPrice),
+		}},
 	}
 }

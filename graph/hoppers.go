@@ -42,6 +42,11 @@ query($skip: Int!) {
 		level
 		adventure
 		image
+		listings {
+			enabled
+			sold
+			price
+		}
 	}
 }`
 
@@ -61,6 +66,13 @@ type (
 		Level        string `json:"level"`
 		Adventure    bool   `json:"adventure"`
 		Image        string `json:"image"`
+		Listings     []ListingGraph
+	}
+
+	ListingGraph struct {
+		Enabled bool   `json:"enabled"`
+		Sold    bool   `json:"sold"`
+		Price   string `json:"price"`
 	}
 
 	HoppersResponse struct {
@@ -73,6 +85,11 @@ type (
 // ----------------------------------------
 
 func parseHopper(hopperGraph HopperGraph) models.Hopper {
+	listings := make([]models.Listing, len(hopperGraph.Listings))
+	for i, listing := range hopperGraph.Listings {
+		listings[i] = parseListing(listing)
+	}
+
 	return models.Hopper{
 		TokenId:      hopperGraph.TokenId,
 		Strength:     ParseInt(hopperGraph.Strength),
@@ -84,6 +101,15 @@ func parseHopper(hopperGraph HopperGraph) models.Hopper {
 		Level:        ParseInt(hopperGraph.Level),
 		Adventure:    hopperGraph.Adventure,
 		Image:        hopperGraph.Image,
+		Listings:     listings,
+	}
+}
+
+func parseListing(listingGraph ListingGraph) models.Listing {
+	return models.Listing{
+		Enabled: listingGraph.Enabled,
+		Sold:    listingGraph.Sold,
+		Price:   ParseBigFloat(listingGraph.Price),
 	}
 }
 

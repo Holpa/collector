@@ -14,7 +14,7 @@ func ParseInt(value string) int {
 }
 
 func ParseBigFloat(value string) *big.Float {
-	b := big.NewFloat(0.0)
+	b := big.NewFloat(0)
 	v, ok := b.SetString(value)
 	if !ok {
 		return big.NewFloat(0)
