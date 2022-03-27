@@ -79,3 +79,52 @@ func CalculateGreatLakeRating(hopper models.Hopper) int {
 
 	return hopper.Strength * hopper.Agility * hopper.Vitality * hopper.Intelligence
 }
+
+func CalculateBaseShare(adventure constants.Adventure, hopper models.Hopper) int {
+	switch adventure {
+	case constants.AdventurePond:
+		return CalculatePondBaseShare(hopper)
+	case constants.AdventureStream:
+		return CalculateStreamBaseShare(hopper)
+	case constants.AdventureSwamp:
+		return CalculateSwampBaseShare(hopper)
+	case constants.AdventureRiver:
+		return CalculateRiverBaseShare(hopper)
+	case constants.AdventureForest:
+		return CalculateForestBaseShare(hopper)
+	case constants.AdventureGreatLake:
+		return CalculateGreatLakeBaseShare(hopper)
+	default:
+		return 0
+	}
+}
+func CalculatePondBaseShare(hopper models.Hopper) int {
+	return hopper.Strength * hopper.Level
+}
+func CalculateStreamBaseShare(hopper models.Hopper) int {
+	return hopper.Agility * hopper.Level
+}
+func CalculateSwampBaseShare(hopper models.Hopper) int {
+	return hopper.Vitality * hopper.Level
+}
+func CalculateRiverBaseShare(hopper models.Hopper) int {
+	if !CanEnterRiver(hopper) {
+		return 0
+	}
+
+	return hopper.Strength * hopper.Intelligence * hopper.Level
+}
+func CalculateForestBaseShare(hopper models.Hopper) int {
+	if !CanEnterForest(hopper) {
+		return 0
+	}
+
+	return hopper.Agility * hopper.Vitality * hopper.Intelligence * hopper.Level
+}
+func CalculateGreatLakeBaseShare(hopper models.Hopper) int {
+	if !CanEnterGreatLake(hopper) {
+		return 0
+	}
+
+	return hopper.Strength * hopper.Agility * hopper.Vitality * hopper.Intelligence * hopper.Level
+}
