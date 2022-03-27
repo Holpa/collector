@@ -46,5 +46,11 @@ type (
 		RatingGreatLake   int     `bson:"ratingGreatLake"`
 		ListingActive     bool    `bson:"listingActive"`
 		ListingPrice      float64 `bson:"listingPrice"`
+		BaseFlyPond       float64 `bson:"baseFlyPond"`
+		BaseFlyStream     float64 `bson:"baseFlyStream"`
+		BaseFlySwamp      float64 `bson:"baseFlySwamp"`
+		BaseFlyRiver      float64 `bson:"baseFlyRiver"`
+		BaseFlyForest     float64 `bson:"baseFlyForest"`
+		BaseFlyGreatLake  float64 `bson:"baseFlyGreatLake"`
 	}
 )

@@ -2,17 +2,21 @@ package contracts
 
 import (
 	"errors"
+	"fmt"
 	"math/big"
+	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/patrickmn/go-cache"
 	"github.com/steschwa/hopper-analytics-collector/constants"
 )
 
 type (
 	OnChainClient struct {
 		Connection *ethclient.Client
+		Cache      *cache.Cache
 	}
 
 	ZoneContract interface {
@@ -29,6 +33,7 @@ func NewOnChainClient() (*OnChainClient, error) {
 
 	return &OnChainClient{
 		Connection: client,
+		Cache:      cache.New(time.Minute*1, time.Second*30),
 	}, nil
 }
 
@@ -80,12 +85,24 @@ func (client *OnChainClient) getAdventureCaller(adventure constants.Adventure) (
 // ----------------------------------------
 
 func (client *OnChainClient) GetTotalBaseShares(adventure constants.Adventure) (*big.Int, error) {
+	cacheKey := fmt.Sprintf("%s.total-base-shares", adventure)
+
+	if total, found := client.Cache.Get(cacheKey); found {
+		return total.(*big.Int), nil
+	}
+
 	caller, err := client.getAdventureCaller(adventure)
 	if err != nil {
 		return big.NewInt(0), err
 	}
 
-	return caller.TotalBaseShare(nil)
+	totalBaseShares, err := caller.TotalBaseShare(nil)
+	if err != nil {
+		return big.NewInt(0), err
+	}
+
+	client.Cache.Set(cacheKey, totalBaseShares, cache.DefaultExpiration)
+	return totalBaseShares, nil
 }
 
 func (client *OnChainClient) GetTotalVeFlyShares(adventure constants.Adventure) (*big.Int, error) {

@@ -5,6 +5,7 @@ go 1.17
 require (
 	github.com/ethereum/go-ethereum v1.10.16
 	github.com/machinebox/graphql v0.2.2
+	github.com/patrickmn/go-cache v2.1.0+incompatible
 	go.mongodb.org/mongo-driver v1.8.4
 )
 

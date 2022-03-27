@@ -12,6 +12,12 @@ type (
 	}
 )
 
+func NewRewardsCalculator(onChainClient *contracts.OnChainClient) *RewardsCalculator {
+	return &RewardsCalculator{
+		OnChainClient: onChainClient,
+	}
+}
+
 func (calculator *RewardsCalculator) CalculateBaseEShare(adventure constants.Adventure, hopper models.Hopper) float64 {
 	if !CanEnter(adventure, hopper) {
 		return 0

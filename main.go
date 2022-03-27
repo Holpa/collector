@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/steschwa/hopper-analytics-collector/contracts"
 	"github.com/steschwa/hopper-analytics-collector/graph"
 	"github.com/steschwa/hopper-analytics-collector/helpers"
 	db "github.com/steschwa/hopper-analytics-collector/mongo"
@@ -38,12 +39,17 @@ func loadAndSaveHoppers(mongoClient *mongo.Client) error {
 		return err
 	}
 
+	onChainClient, err := contracts.NewOnChainClient()
+	if err != nil {
+		return err
+	}
+	rewardsCalculator := helpers.NewRewardsCalculator(onChainClient)
+
 	collection := &db.HoppersCollection{
 		Connection: mongoClient,
 	}
-
 	for _, hopper := range hoppers {
-		err = collection.Upsert(helpers.HopperToHopperDocument(hopper))
+		err = collection.Upsert(helpers.HopperToHopperDocument(hopper, rewardsCalculator))
 		if err != nil {
 			log.Println(err)
 		}
