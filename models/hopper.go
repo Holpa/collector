@@ -38,12 +38,12 @@ type (
 		CanEnterRiver     bool    `bson:"canEnterRiver"`
 		CanEnterForest    bool    `bson:"canEnterForest"`
 		CanEnterGreatLake bool    `bson:"canEnterGreatLake"`
-		RatingPond        int     `bson:"ratingPond"`
-		RatingStream      int     `bson:"ratingStream"`
-		RatingSwamp       int     `bson:"ratingSwamp"`
-		RatingRiver       int     `bson:"ratingRiver"`
-		RatingForest      int     `bson:"ratingForest"`
-		RatingGreatLake   int     `bson:"ratingGreatLake"`
+		RatingPond        float64 `bson:"ratingPond"`
+		RatingStream      float64 `bson:"ratingStream"`
+		RatingSwamp       float64 `bson:"ratingSwamp"`
+		RatingRiver       float64 `bson:"ratingRiver"`
+		RatingForest      float64 `bson:"ratingForest"`
+		RatingGreatLake   float64 `bson:"ratingGreatLake"`
 		ListingActive     bool    `bson:"listingActive"`
 		ListingPrice      float64 `bson:"listingPrice"`
 		BaseFlyPond       float64 `bson:"baseFlyPond"`

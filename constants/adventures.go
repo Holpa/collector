@@ -12,6 +12,14 @@ const (
 	AdventureForest
 	AdventureGreatLake
 )
+const (
+	MAX_RATING_POND       = 10
+	MAX_RATING_STREAM     = 10
+	MAX_RATING_SWAMP      = 10
+	MAX_RATING_RIVER      = 10 * 10
+	MAX_RATING_FOREST     = 10 * 10 * 10
+	MAX_RATING_GREAT_LAKE = 10 * 10 * 10 * 10
+)
 
 func (adventure Adventure) String() string {
 	switch adventure {
