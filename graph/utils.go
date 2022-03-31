@@ -21,3 +21,11 @@ func ParseBigFloat(value string) *big.Float {
 	}
 	return v
 }
+
+func ParseUInt(value string) uint {
+	parsed, err := strconv.ParseUint(value, 10, 64)
+	if err != nil {
+		return 0
+	}
+	return uint(parsed)
+}

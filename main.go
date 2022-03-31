@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"os"
+	"sync"
 
 	"github.com/steschwa/hopper-analytics-collector/contracts"
 	"github.com/steschwa/hopper-analytics-collector/graph"
@@ -14,6 +15,10 @@ import (
 
 const (
 	MONGO_URI_ENV = "MONGO_URI"
+)
+
+type (
+	Operation func(mongoClient *mongo.Client) error
 )
 
 func main() {
@@ -28,7 +33,26 @@ func main() {
 	}
 	defer mongoClient.Disconnect(context.Background())
 
-	loadAndSaveHoppers(mongoClient)
+	var wg sync.WaitGroup
+
+	operations := []Operation{
+		loadAndSaveHoppers,
+		loadAndSaveMarketListings,
+	}
+
+	for _, operation := range operations {
+		wg.Add(1)
+		go func(mongoClient *mongo.Client, operation Operation) {
+			defer wg.Done()
+
+			err := operation(mongoClient)
+			if err != nil {
+				log.Println(err)
+			}
+		}(mongoClient, operation)
+	}
+
+	wg.Wait()
 }
 
 func loadAndSaveHoppers(mongoClient *mongo.Client) error {
@@ -50,6 +74,27 @@ func loadAndSaveHoppers(mongoClient *mongo.Client) error {
 	}
 	for _, hopper := range hoppers {
 		err = collection.Upsert(helpers.HopperToHopperDocument(hopper, rewardsCalculator))
+		if err != nil {
+			log.Println(err)
+		}
+	}
+
+	return nil
+}
+
+func loadAndSaveMarketListings(mongoClient *mongo.Client) error {
+	graph := graph.NewMarketsGraphClient()
+
+	listings, err := graph.FetchAllListings()
+	if err != nil {
+		return err
+	}
+
+	collection := &db.MarketsCollection{
+		Connection: mongoClient,
+	}
+	for _, listing := range listings {
+		err = collection.Upsert(helpers.ListingToListingDocument(listing))
 		if err != nil {
 			log.Println(err)
 		}

@@ -1,7 +1,5 @@
 package models
 
-import "math/big"
-
 type (
 	Hopper struct {
 		TokenId      string
@@ -14,12 +12,6 @@ type (
 		Image        string
 		Adventure    bool
 		Listings     []Listing
-	}
-
-	Listing struct {
-		Enabled bool
-		Sold    bool
-		Price   *big.Float
 	}
 
 	HopperDocument struct {

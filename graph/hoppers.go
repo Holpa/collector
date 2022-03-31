@@ -28,9 +28,9 @@ const GET_HOPPERS_QUERY = `
 query($skip: Int!) {
 	hopperNFTs(
 		first: 1000,
+		skip: $skip,
 		orderBy: tokenId,
-		orderDirection: asc,
-		skip: $skip
+		orderDirection: asc
 	) {
 		tokenId
 		strength
@@ -55,19 +55,19 @@ query($skip: Int!) {
 
 type (
 	HopperGraph struct {
-		TokenId      string `json:"tokenId"`
-		Strength     string `json:"strength"`
-		Agility      string `json:"agility"`
-		Vitality     string `json:"vitality"`
-		Intelligence string `json:"intelligence"`
-		Fertility    string `json:"fertility"`
-		Level        string `json:"level"`
-		Adventure    bool   `json:"adventure"`
-		Image        string `json:"image"`
-		Listings     []ListingGraph
+		TokenId      string               `json:"tokenId"`
+		Strength     string               `json:"strength"`
+		Agility      string               `json:"agility"`
+		Vitality     string               `json:"vitality"`
+		Intelligence string               `json:"intelligence"`
+		Fertility    string               `json:"fertility"`
+		Level        string               `json:"level"`
+		Adventure    bool                 `json:"adventure"`
+		Image        string               `json:"image"`
+		Listings     []HopperListingGraph `json:"listings"`
 	}
 
-	ListingGraph struct {
+	HopperListingGraph struct {
 		Enabled bool   `json:"enabled"`
 		Sold    bool   `json:"sold"`
 		Price   string `json:"price"`
@@ -85,7 +85,7 @@ type (
 func parseHopper(hopperGraph HopperGraph) models.Hopper {
 	listings := make([]models.Listing, len(hopperGraph.Listings))
 	for i, listing := range hopperGraph.Listings {
-		listings[i] = parseListing(listing)
+		listings[i] = parseHopperListing(listing)
 	}
 
 	return models.Hopper{
@@ -102,7 +102,7 @@ func parseHopper(hopperGraph HopperGraph) models.Hopper {
 	}
 }
 
-func parseListing(listingGraph ListingGraph) models.Listing {
+func parseHopperListing(listingGraph HopperListingGraph) models.Listing {
 	return models.Listing{
 		Enabled: listingGraph.Enabled,
 		Sold:    listingGraph.Sold,
