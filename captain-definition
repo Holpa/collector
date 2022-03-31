@@ -1,0 +1,14 @@
+{
+    "schemaVersion": 2,
+    "dockerfileLines": [
+        "FROM jobber:latest",
+        "WORKDIR /home/jobberuser",
+        "RUN mkdir -p hopper-analytics-collector",
+        "COPY ./bin/hopper-analytics-collector.linux ./hopper-analytics-collector/collect",
+        "COPY ./.jobber .",
+        "USER root",
+        "RUN chown 1000:1000 ./.jobber",
+        "RUN chmod 600 ./.jobber",
+        "USER jobberuser"
+    ]
+}

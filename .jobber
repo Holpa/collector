@@ -1,0 +1,20 @@
+version: 1.4
+
+resultSinks:
+    - &log
+      type: stdout
+      data:
+          - stdout
+          - stderr
+
+jobs:
+    HopperCollector:
+        cmd: "/home/jobberuser/hopper-analytics-collector/collect"
+        time: "0 */2 * * * *"
+        onError: Continue
+        notifyOnSuccess:
+            - *log
+        notifyOnError:
+            - *log
+        notifyOnFailure:
+            - *log
