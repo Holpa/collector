@@ -60,3 +60,24 @@ func AdventureFromString(adventure string) Adventure {
 		return AdventurePond
 	}
 }
+
+func AdventureFromContract(contractAddr string) (adventure Adventure, valid bool) {
+	contractAddr = strings.ToLower(contractAddr)
+
+	switch contractAddr {
+	case ADVENTURE_POND_CONTRACT:
+		return AdventurePond, true
+	case ADVENTURE_STREAM_CONTRACT:
+		return AdventureStream, true
+	case ADVENTURE_SWAMP_CONTRACT:
+		return AdventureSwamp, true
+	case ADVENTURE_RIVER_CONTRACT:
+		return AdventureRiver, true
+	case ADVENTURE_FOREST_CONTRACT:
+		return AdventureForest, true
+	case ADVENTURE_GREAT_LAKE_CONTRACT:
+		return AdventureGreatLake, true
+	}
+
+	return AdventurePond, false
+}

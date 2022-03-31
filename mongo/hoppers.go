@@ -6,7 +6,6 @@ import (
 	"github.com/steschwa/hopper-analytics-collector/models"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 const (
@@ -23,15 +22,28 @@ func (col *HoppersCollection) GetCollection() *mongo.Collection {
 	return GetCollection(col.Connection, HOPPERS_COLLECTION)
 }
 
-func (col *HoppersCollection) Upsert(hopper models.HopperDocument) error {
+func (col *HoppersCollection) InsertMany(hoppers []models.HopperDocument) error {
 	collection := col.GetCollection()
 
-	upsert := true
-	_, err := collection.ReplaceOne(
+	data := make([]interface{}, len(hoppers))
+	for i, hopper := range hoppers {
+		data[i] = hopper
+	}
+
+	_, err := collection.InsertMany(
 		context.Background(),
-		bson.D{{Key: "tokenId", Value: hopper.TokenId}},
-		hopper,
-		&options.ReplaceOptions{Upsert: &upsert},
+		data,
+	)
+
+	return err
+}
+
+func (col *HoppersCollection) Clear() error {
+	collection := col.GetCollection()
+
+	_, err := collection.DeleteMany(
+		context.Background(),
+		bson.D{},
 	)
 
 	return err

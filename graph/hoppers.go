@@ -41,6 +41,7 @@ query($skip: Int!) {
 		level
 		adventure
 		image
+		chainOwner
 		listings {
 			enabled
 			sold
@@ -64,6 +65,7 @@ type (
 		Level        string               `json:"level"`
 		Adventure    bool                 `json:"adventure"`
 		Image        string               `json:"image"`
+		ChainOwner   string               `json:"chainOwner"`
 		Listings     []HopperListingGraph `json:"listings"`
 	}
 
@@ -97,6 +99,7 @@ func parseHopper(hopperGraph HopperGraph) models.Hopper {
 		Fertility:    ParseInt(hopperGraph.Fertility),
 		Level:        ParseInt(hopperGraph.Level),
 		Adventure:    hopperGraph.Adventure,
+		ChainOwner:   hopperGraph.ChainOwner,
 		Image:        hopperGraph.Image,
 		Listings:     listings,
 	}

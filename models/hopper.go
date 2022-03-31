@@ -11,6 +11,7 @@ type (
 		Level        int
 		Image        string
 		Adventure    bool
+		ChainOwner   string
 		Listings     []Listing
 	}
 
@@ -23,7 +24,8 @@ type (
 		Fertility         int     `bson:"fertility"`
 		Level             int     `bson:"level"`
 		Image             string  `bson:"image"`
-		Adventure         bool    `bson:"adventure"`
+		InAdventure       bool    `bson:"inAdventure"`
+		Adventure         string  `bson:"adventure"`
 		CanEnterPond      bool    `bson:"canEnterPond"`
 		CanEnterStream    bool    `bson:"canEnterStream"`
 		CanEnterSwamp     bool    `bson:"canEnterSwamp"`

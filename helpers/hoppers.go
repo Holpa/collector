@@ -2,7 +2,6 @@ package helpers
 
 import (
 	"math"
-	"math/big"
 
 	"github.com/steschwa/hopper-analytics-collector/constants"
 	"github.com/steschwa/hopper-analytics-collector/models"
@@ -27,6 +26,12 @@ func HopperToHopperDocument(hopper models.Hopper, rewardsCalculator *RewardsCalc
 	baseFlyForest := rewardsCalculator.CalculateBaseFlyRewards(constants.AdventureForest, hopper)
 	baseFlyGreatLake := rewardsCalculator.CalculateBaseFlyRewards(constants.AdventureGreatLake, hopper)
 
+	adventure, _ := constants.AdventureFromContract(hopper.ChainOwner)
+	hopperAdventure := adventure.String()
+	if !hopper.Adventure {
+		hopperAdventure = ""
+	}
+
 	return models.HopperDocument{
 		TokenId:           hopper.TokenId,
 		Strength:          hopper.Strength,
@@ -36,7 +41,8 @@ func HopperToHopperDocument(hopper models.Hopper, rewardsCalculator *RewardsCalc
 		Fertility:         hopper.Fertility,
 		Level:             hopper.Level,
 		Image:             hopper.Image,
-		Adventure:         hopper.Adventure,
+		InAdventure:       hopper.Adventure,
+		Adventure:         hopperAdventure,
 		CanEnterPond:      true,
 		CanEnterStream:    true,
 		CanEnterSwamp:     true,
@@ -57,24 +63,5 @@ func HopperToHopperDocument(hopper models.Hopper, rewardsCalculator *RewardsCalc
 		BaseFlyRiver:      baseFlyRiver,
 		BaseFlyForest:     baseFlyForest,
 		BaseFlyGreatLake:  baseFlyGreatLake,
-	}
-}
-
-func HopperDocumentToHopper(hopperDocument models.HopperDocument) models.Hopper {
-	return models.Hopper{
-		TokenId:      hopperDocument.TokenId,
-		Strength:     hopperDocument.Strength,
-		Agility:      hopperDocument.Agility,
-		Vitality:     hopperDocument.Vitality,
-		Intelligence: hopperDocument.Intelligence,
-		Fertility:    hopperDocument.Fertility,
-		Level:        hopperDocument.Level,
-		Image:        hopperDocument.Image,
-		Adventure:    hopperDocument.Adventure,
-		Listings: []models.Listing{{
-			Enabled: hopperDocument.ListingActive,
-			Sold:    false,
-			Price:   big.NewFloat(hopperDocument.ListingPrice),
-		}},
 	}
 }

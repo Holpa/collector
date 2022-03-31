@@ -9,6 +9,7 @@ import (
 	"github.com/steschwa/hopper-analytics-collector/contracts"
 	"github.com/steschwa/hopper-analytics-collector/graph"
 	"github.com/steschwa/hopper-analytics-collector/helpers"
+	"github.com/steschwa/hopper-analytics-collector/models"
 	db "github.com/steschwa/hopper-analytics-collector/mongo"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -72,14 +73,17 @@ func loadAndSaveHoppers(mongoClient *mongo.Client) error {
 	collection := &db.HoppersCollection{
 		Connection: mongoClient,
 	}
-	for _, hopper := range hoppers {
-		err = collection.Upsert(helpers.HopperToHopperDocument(hopper, rewardsCalculator))
-		if err != nil {
-			log.Println(err)
-		}
+
+	err = collection.Clear()
+	if err != nil {
+		return err
 	}
 
-	return nil
+	hopperDocuments := make([]models.HopperDocument, len(hoppers))
+	for i, hopper := range hoppers {
+		hopperDocuments[i] = helpers.HopperToHopperDocument(hopper, rewardsCalculator)
+	}
+	return collection.InsertMany(hopperDocuments)
 }
 
 func loadAndSaveMarketListings(mongoClient *mongo.Client) error {
@@ -93,12 +97,16 @@ func loadAndSaveMarketListings(mongoClient *mongo.Client) error {
 	collection := &db.MarketsCollection{
 		Connection: mongoClient,
 	}
-	for _, listing := range listings {
-		err = collection.Upsert(helpers.ListingToListingDocument(listing))
-		if err != nil {
-			log.Println(err)
-		}
+
+	err = collection.Clear()
+	if err != nil {
+		return err
 	}
 
-	return nil
+	listingDocuments := make([]models.ListingDocument, len(listings))
+	for i, listing := range listings {
+		listingDocuments[i] = helpers.ListingToListingDocument(listing)
+	}
+
+	return collection.InsertMany(listingDocuments)
 }
