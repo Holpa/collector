@@ -59,6 +59,9 @@ func (client *OnChainClient) getForestCaller() (*AdventureForestCaller, error) {
 func (client *OnChainClient) getGreatLakeCaller() (*AdventureGreatLakeCaller, error) {
 	return NewAdventureGreatLakeCaller(common.HexToAddress(constants.ADVENTURE_GREAT_LAKE_CONTRACT), client.Connection)
 }
+func (client *OnChainClient) getBallotCaller() (*BallotCaller, error) {
+	return NewBallotCaller(common.HexToAddress(constants.BALLOT_CONTRACT), client.Connection)
+}
 
 func (client *OnChainClient) getAdventureCaller(adventure constants.Adventure) (ZoneContract, error) {
 	switch adventure {
@@ -77,7 +80,26 @@ func (client *OnChainClient) getAdventureCaller(adventure constants.Adventure) (
 	}
 
 	// should never happen
-	return nil, errors.New("invalid adventure")
+	return nil, errors.New("unknown adventure")
+}
+
+func getContractByAdventure(adventure constants.Adventure) string {
+	switch adventure {
+	case constants.AdventurePond:
+		return constants.ADVENTURE_POND_CONTRACT
+	case constants.AdventureStream:
+		return constants.ADVENTURE_STREAM_CONTRACT
+	case constants.AdventureSwamp:
+		return constants.ADVENTURE_SWAMP_CONTRACT
+	case constants.AdventureRiver:
+		return constants.ADVENTURE_RIVER_CONTRACT
+	case constants.AdventureForest:
+		return constants.ADVENTURE_FOREST_CONTRACT
+	case constants.AdventureGreatLake:
+		return constants.ADVENTURE_GREAT_LAKE_CONTRACT
+	}
+
+	return ""
 }
 
 // ----------------------------------------
@@ -105,11 +127,25 @@ func (client *OnChainClient) GetTotalBaseShares(adventure constants.Adventure) (
 	return totalBaseShares, nil
 }
 
-func (client *OnChainClient) GetTotalVeFlyShares(adventure constants.Adventure) (*big.Int, error) {
-	caller, err := client.getAdventureCaller(adventure)
+func (client *OnChainClient) GetVotesByAdventure(adventure constants.Adventure) (*big.Int, error) {
+	cacheKey := fmt.Sprintf("%s.total-votes", adventure)
+
+	if total, found := client.Cache.Get(cacheKey); found {
+		return total.(*big.Int), nil
+	}
+
+	caller, err := client.getBallotCaller()
 	if err != nil {
 		return big.NewInt(0), err
 	}
 
-	return caller.TotalVeShare(nil)
+	adventureContract := getContractByAdventure(adventure)
+
+	votes, err := caller.ZonesVotes(nil, common.HexToAddress(adventureContract))
+	if err != nil {
+		return big.NewInt(0), err
+	}
+
+	client.Cache.Set(cacheKey, votes, cache.DefaultExpiration)
+	return votes, nil
 }

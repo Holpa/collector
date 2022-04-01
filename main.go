@@ -3,9 +3,12 @@ package main
 import (
 	"context"
 	"log"
+	"math/big"
 	"os"
 	"sync"
 
+	"github.com/shopspring/decimal"
+	"github.com/steschwa/hopper-analytics-collector/constants"
 	"github.com/steschwa/hopper-analytics-collector/contracts"
 	"github.com/steschwa/hopper-analytics-collector/graph"
 	"github.com/steschwa/hopper-analytics-collector/helpers"
@@ -39,6 +42,7 @@ func main() {
 	operations := []Operation{
 		loadAndSaveHoppers,
 		loadAndSaveMarketListings,
+		loadAndSaveVotes,
 	}
 
 	for _, operation := range operations {
@@ -109,4 +113,67 @@ func loadAndSaveMarketListings(mongoClient *mongo.Client) error {
 	}
 
 	return collection.InsertMany(listingDocuments)
+}
+
+func loadAndSaveVotes(mongoClient *mongo.Client) error {
+	onChainClient, err := contracts.NewOnChainClient()
+	if err != nil {
+		return err
+	}
+
+	adventures := []constants.Adventure{
+		constants.AdventurePond,
+		constants.AdventureStream,
+		constants.AdventureSwamp,
+		constants.AdventureRiver,
+		constants.AdventureForest,
+		constants.AdventureGreatLake,
+	}
+
+	totalVotes := big.NewInt(0)
+	voteDocuments := []models.VoteDocument{}
+	for _, adventure := range adventures {
+		votes, err := onChainClient.GetVotesByAdventure(adventure)
+		if err != nil {
+			log.Println(err)
+			continue
+		}
+
+		totalVotes = big.NewInt(0).Add(totalVotes, votes)
+		voteDocuments = append(voteDocuments, models.VoteDocument{
+			Adventure: adventure.String(),
+			Votes:     models.NewBigInt(votes),
+		})
+	}
+
+	collection := &db.VotesCollection{
+		Connection: mongoClient,
+	}
+
+	for _, voteDocument := range voteDocuments {
+		patchedVoteDocument := models.VoteDocument(voteDocument)
+
+		votes, err := decimal.NewFromString(voteDocument.Votes.Int().String())
+		if err != nil {
+			log.Println(err)
+			continue
+		}
+
+		totalShareStr, err := decimal.NewFromString(totalVotes.String())
+		if err != nil {
+			log.Println(err)
+			continue
+		}
+		share, _ := votes.Div(totalShareStr).Float64()
+
+		patchedVoteDocument.TotalVotes = models.NewBigInt(totalVotes)
+		patchedVoteDocument.VotesShare = share
+
+		err = collection.Upsert(patchedVoteDocument)
+		if err != nil {
+			log.Println(err)
+		}
+	}
+
+	return nil
 }
