@@ -2,6 +2,7 @@ package helpers
 
 import (
 	"math"
+	"strings"
 
 	"github.com/steschwa/hopper-analytics-collector/constants"
 	"github.com/steschwa/hopper-analytics-collector/models"
@@ -63,5 +64,6 @@ func HopperToHopperDocument(hopper models.Hopper, rewardsCalculator *RewardsCalc
 		BaseFlyRiver:      baseFlyRiver,
 		BaseFlyForest:     baseFlyForest,
 		BaseFlyGreatLake:  baseFlyGreatLake,
+		Owner:             strings.ToLower(hopper.User),
 	}
 }

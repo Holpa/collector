@@ -12,6 +12,7 @@ type (
 		Image        string
 		Adventure    bool
 		ChainOwner   string
+		User         string
 		Listings     []Listing
 	}
 
@@ -46,5 +47,6 @@ type (
 		BaseFlyRiver      float64 `bson:"baseFlyRiver"`
 		BaseFlyForest     float64 `bson:"baseFlyForest"`
 		BaseFlyGreatLake  float64 `bson:"baseFlyGreatLake"`
+		Owner             string  `bson:"owner"`
 	}
 )
