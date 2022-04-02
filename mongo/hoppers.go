@@ -44,6 +44,5 @@ func (col *HoppersCollection) Clear() error {
 		context.Background(),
 		bson.D{},
 	)
-
 	return err
 }

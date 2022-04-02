@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/steschwa/hopper-analytics-collector/models"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -19,6 +20,16 @@ type (
 
 func (col *PricesCollection) GetCollection() *mongo.Collection {
 	return GetCollection(col.Connection, PRICES_COLLECTION)
+}
+
+func (col *PricesCollection) Clear() error {
+	collection := col.GetCollection()
+
+	_, err := collection.DeleteMany(
+		context.Background(),
+		bson.D{},
+	)
+	return err
 }
 
 func (col *PricesCollection) InsertMany(prices []models.PriceDocument) error {

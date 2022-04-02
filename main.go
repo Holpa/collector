@@ -210,8 +210,13 @@ func loadAndSavePrices(mongoClient *mongo.Client) error {
 		}
 	}
 
-	priceCollection := &db.PricesCollection{
+	pricesCollection := &db.PricesCollection{
 		Connection: mongoClient,
 	}
-	return priceCollection.InsertMany(priceDocuments)
+	err = pricesCollection.Clear()
+	if err != nil {
+		return err
+	}
+
+	return pricesCollection.InsertMany(priceDocuments)
 }
