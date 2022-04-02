@@ -43,3 +43,6 @@ func (bigInt *BigInt) UnmarshalBSON(data []byte) error {
 
 	return fmt.Errorf("key 'v' missing")
 }
+func (bigInt *BigInt) MarshalJSON() ([]byte, error) {
+	return bigInt.v.MarshalText()
+}

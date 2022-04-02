@@ -45,6 +45,5 @@ func (col *MarketsCollection) InsertMany(listings []models.ListingDocument) erro
 		context.Background(),
 		listingDocuments,
 	)
-
 	return err
 }

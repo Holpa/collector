@@ -34,7 +34,6 @@ func (col *HoppersCollection) InsertMany(hoppers []models.HopperDocument) error 
 		context.Background(),
 		data,
 	)
-
 	return err
 }
 

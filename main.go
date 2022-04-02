@@ -6,8 +6,10 @@ import (
 	"math/big"
 	"os"
 	"sync"
+	"time"
 
 	"github.com/shopspring/decimal"
+	"github.com/steschwa/hopper-analytics-collector/coingecko"
 	"github.com/steschwa/hopper-analytics-collector/constants"
 	"github.com/steschwa/hopper-analytics-collector/contracts"
 	"github.com/steschwa/hopper-analytics-collector/graph"
@@ -43,6 +45,7 @@ func main() {
 		loadAndSaveHoppers,
 		loadAndSaveMarketListings,
 		loadAndSaveVotes,
+		loadAndSavePrices,
 	}
 
 	for _, operation := range operations {
@@ -176,4 +179,39 @@ func loadAndSaveVotes(mongoClient *mongo.Client) error {
 	}
 
 	return nil
+}
+
+func loadAndSavePrices(mongoClient *mongo.Client) error {
+	coinGeckoClient := coingecko.NewCoinGeckoClient()
+
+	ids := []constants.CoinGeckoId{
+		constants.COINGECKO_AVAX,
+		constants.COINGECKO_FLY,
+	}
+	currencies := []constants.CoinGeckoCurrency{
+		constants.COINGECKO_USD,
+		constants.COINGECKO_EUR,
+	}
+
+	prices, err := coinGeckoClient.CurrentPrice(ids, currencies)
+	if err != nil {
+		return err
+	}
+
+	priceDocuments := []models.PriceDocument{}
+	for coin, priceData := range prices {
+		for currency, price := range priceData {
+			priceDocuments = append(priceDocuments, models.PriceDocument{
+				Coin:      coin,
+				Currency:  currency,
+				Price:     price,
+				Timestamp: time.Now(),
+			})
+		}
+	}
+
+	priceCollection := &db.PricesCollection{
+		Connection: mongoClient,
+	}
+	return priceCollection.InsertMany(priceDocuments)
 }
