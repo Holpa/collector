@@ -62,6 +62,9 @@ func (client *OnChainClient) getGreatLakeCaller() (*AdventureGreatLakeCaller, er
 func (client *OnChainClient) getBallotCaller() (*BallotCaller, error) {
 	return NewBallotCaller(common.HexToAddress(constants.BALLOT_CONTRACT), client.Connection)
 }
+func (client *OnChainClient) getFlyCaller() (*FlyCaller, error) {
+	return NewFlyCaller(common.HexToAddress(constants.FLY_CONTRACT), client.Connection)
+}
 
 func (client *OnChainClient) getAdventureCaller(adventure constants.Adventure) (ZoneContract, error) {
 	switch adventure {
@@ -148,4 +151,13 @@ func (client *OnChainClient) GetVotesByAdventure(adventure constants.Adventure) 
 
 	client.Cache.Set(cacheKey, votes, cache.DefaultExpiration)
 	return votes, nil
+}
+
+func (client *OnChainClient) GetFlySupply() (*big.Int, error) {
+	caller, err := client.getFlyCaller()
+	if err != nil {
+		return big.NewInt(0), err
+	}
+
+	return caller.TotalSupply(nil)
 }

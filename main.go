@@ -46,6 +46,7 @@ func main() {
 		loadAndSaveMarketListings,
 		loadAndSaveVotes,
 		loadAndSavePrices,
+		loadAndSaveSupplies,
 	}
 
 	for _, operation := range operations {
@@ -219,4 +220,26 @@ func loadAndSavePrices(mongoClient *mongo.Client) error {
 	}
 
 	return pricesCollection.InsertMany(priceDocuments)
+}
+
+func loadAndSaveSupplies(mongoClient *mongo.Client) error {
+	onChainClient, err := contracts.NewOnChainClient()
+	if err != nil {
+		return err
+	}
+
+	flySupply, err := onChainClient.GetFlySupply()
+	if err != nil {
+		return err
+	}
+
+	supplyDocument := models.SupplyDocument{
+		Type:   models.FLY_SUPPLY,
+		Supply: models.NewBigInt(flySupply),
+	}
+
+	collection := &db.SuppliesCollection{
+		Connection: mongoClient,
+	}
+	return collection.InsertSupply(supplyDocument)
 }
