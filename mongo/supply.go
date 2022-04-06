@@ -22,7 +22,7 @@ func (col *SuppliesCollection) GetCollection() *mongo.Collection {
 	return GetCollection(col.Connection, SUPPLY_COLLECTION)
 }
 
-func (col *SuppliesCollection) InsertSupply(supply models.SupplyDocument) error {
+func (col *SuppliesCollection) Insert(supply models.SupplyDocument) error {
 	collection := col.GetCollection()
 
 	supply.Timestamp = time.Now()

@@ -39,14 +39,20 @@ func main() {
 	}
 	defer mongoClient.Disconnect(context.Background())
 
+	onChainClient, err := contracts.NewOnChainClient()
+	if err != nil {
+		log.Fatalln(err)
+	}
+
 	var wg sync.WaitGroup
 
 	operations := []Operation{
-		loadAndSaveHoppers,
+		loadAndSaveHoppers(onChainClient),
 		loadAndSaveMarketListings,
-		loadAndSaveVotes,
+		loadAndSaveVotes(onChainClient),
 		loadAndSavePrices,
-		loadAndSaveSupplies,
+		loadAndSaveSupplies(onChainClient),
+		loadAndSaveBaseShares(onChainClient),
 	}
 
 	for _, operation := range operations {
@@ -64,34 +70,32 @@ func main() {
 	wg.Wait()
 }
 
-func loadAndSaveHoppers(mongoClient *mongo.Client) error {
-	graph := graph.NewHoppersGraphClient()
+func loadAndSaveHoppers(onChainClient *contracts.OnChainClient) Operation {
+	return func(mongoClient *mongo.Client) error {
+		graph := graph.NewHoppersGraphClient()
 
-	hoppers, err := graph.FetchAllHoppers()
-	if err != nil {
-		return err
-	}
+		hoppers, err := graph.FetchAllHoppers()
+		if err != nil {
+			return err
+		}
 
-	onChainClient, err := contracts.NewOnChainClient()
-	if err != nil {
-		return err
-	}
-	rewardsCalculator := helpers.NewRewardsCalculator(onChainClient)
+		rewardsCalculator := helpers.NewRewardsCalculator(onChainClient)
 
-	collection := &db.HoppersCollection{
-		Connection: mongoClient,
-	}
+		collection := &db.HoppersCollection{
+			Connection: mongoClient,
+		}
 
-	err = collection.Clear()
-	if err != nil {
-		return err
-	}
+		err = collection.Clear()
+		if err != nil {
+			return err
+		}
 
-	hopperDocuments := make([]models.HopperDocument, len(hoppers))
-	for i, hopper := range hoppers {
-		hopperDocuments[i] = helpers.HopperToHopperDocument(hopper, rewardsCalculator)
+		hopperDocuments := make([]models.HopperDocument, len(hoppers))
+		for i, hopper := range hoppers {
+			hopperDocuments[i] = helpers.HopperToHopperDocument(hopper, rewardsCalculator)
+		}
+		return collection.InsertMany(hopperDocuments)
 	}
-	return collection.InsertMany(hopperDocuments)
 }
 
 func loadAndSaveMarketListings(mongoClient *mongo.Client) error {
@@ -119,67 +123,64 @@ func loadAndSaveMarketListings(mongoClient *mongo.Client) error {
 	return collection.InsertMany(listingDocuments)
 }
 
-func loadAndSaveVotes(mongoClient *mongo.Client) error {
-	onChainClient, err := contracts.NewOnChainClient()
-	if err != nil {
-		return err
-	}
-
-	adventures := []constants.Adventure{
-		constants.AdventurePond,
-		constants.AdventureStream,
-		constants.AdventureSwamp,
-		constants.AdventureRiver,
-		constants.AdventureForest,
-		constants.AdventureGreatLake,
-	}
-
-	totalVotes := big.NewInt(0)
-	voteDocuments := []models.VoteDocument{}
-	for _, adventure := range adventures {
-		votes, err := onChainClient.GetVotesByAdventure(adventure)
-		if err != nil {
-			log.Println(err)
-			continue
+func loadAndSaveVotes(onChainClient *contracts.OnChainClient) Operation {
+	return func(mongoClient *mongo.Client) error {
+		adventures := []constants.Adventure{
+			constants.AdventurePond,
+			constants.AdventureStream,
+			constants.AdventureSwamp,
+			constants.AdventureRiver,
+			constants.AdventureForest,
+			constants.AdventureGreatLake,
 		}
 
-		totalVotes = big.NewInt(0).Add(totalVotes, votes)
-		voteDocuments = append(voteDocuments, models.VoteDocument{
-			Adventure: adventure.String(),
-			Votes:     models.NewBigInt(votes),
-		})
-	}
+		totalVotes := big.NewInt(0)
+		voteDocuments := []models.VoteDocument{}
+		for _, adventure := range adventures {
+			votes, err := onChainClient.GetVotesByAdventure(adventure)
+			if err != nil {
+				log.Println(err)
+				continue
+			}
 
-	collection := &db.VotesCollection{
-		Connection: mongoClient,
-	}
-
-	for _, voteDocument := range voteDocuments {
-		patchedVoteDocument := models.VoteDocument(voteDocument)
-
-		votes, err := decimal.NewFromString(voteDocument.Votes.Int().String())
-		if err != nil {
-			log.Println(err)
-			continue
+			totalVotes = big.NewInt(0).Add(totalVotes, votes)
+			voteDocuments = append(voteDocuments, models.VoteDocument{
+				Adventure: adventure.String(),
+				Votes:     models.NewBigInt(votes),
+			})
 		}
 
-		totalShareStr, err := decimal.NewFromString(totalVotes.String())
-		if err != nil {
-			log.Println(err)
-			continue
+		collection := &db.VotesCollection{
+			Connection: mongoClient,
 		}
-		share, _ := votes.Div(totalShareStr).Float64()
 
-		patchedVoteDocument.TotalVotes = models.NewBigInt(totalVotes)
-		patchedVoteDocument.VotesShare = share
+		for _, voteDocument := range voteDocuments {
+			patchedVoteDocument := models.VoteDocument(voteDocument)
 
-		err = collection.Upsert(patchedVoteDocument)
-		if err != nil {
-			log.Println(err)
+			votes, err := decimal.NewFromString(voteDocument.Votes.Int().String())
+			if err != nil {
+				log.Println(err)
+				continue
+			}
+
+			totalShareStr, err := decimal.NewFromString(totalVotes.String())
+			if err != nil {
+				log.Println(err)
+				continue
+			}
+			share, _ := votes.Div(totalShareStr).Float64()
+
+			patchedVoteDocument.TotalVotes = models.NewBigInt(totalVotes)
+			patchedVoteDocument.VotesShare = share
+
+			err = collection.Insert(patchedVoteDocument)
+			if err != nil {
+				log.Println(err)
+			}
 		}
+
+		return nil
 	}
-
-	return nil
 }
 
 func loadAndSavePrices(mongoClient *mongo.Client) error {
@@ -222,24 +223,52 @@ func loadAndSavePrices(mongoClient *mongo.Client) error {
 	return pricesCollection.InsertMany(priceDocuments)
 }
 
-func loadAndSaveSupplies(mongoClient *mongo.Client) error {
-	onChainClient, err := contracts.NewOnChainClient()
-	if err != nil {
-		return err
-	}
+func loadAndSaveSupplies(onChainClient *contracts.OnChainClient) Operation {
+	return func(mongoClient *mongo.Client) error {
+		flySupply, err := onChainClient.GetFlySupply()
+		if err != nil {
+			return err
+		}
 
-	flySupply, err := onChainClient.GetFlySupply()
-	if err != nil {
-		return err
-	}
+		supplyDocument := models.SupplyDocument{
+			Type:   models.FLY_SUPPLY,
+			Supply: models.NewBigInt(flySupply),
+		}
 
-	supplyDocument := models.SupplyDocument{
-		Type:   models.FLY_SUPPLY,
-		Supply: models.NewBigInt(flySupply),
+		collection := &db.SuppliesCollection{
+			Connection: mongoClient,
+		}
+		return collection.Insert(supplyDocument)
 	}
+}
 
-	collection := &db.SuppliesCollection{
-		Connection: mongoClient,
+func loadAndSaveBaseShares(onChainClient *contracts.OnChainClient) Operation {
+	return func(mongoClient *mongo.Client) error {
+		adventures := []constants.Adventure{
+			constants.AdventurePond,
+			constants.AdventureStream,
+			constants.AdventureSwamp,
+			constants.AdventureRiver,
+			constants.AdventureForest,
+			constants.AdventureGreatLake,
+		}
+
+		collection := &db.BaseSharesCollection{
+			Connection: mongoClient,
+		}
+		for _, adventure := range adventures {
+			totalBaseShares, err := onChainClient.GetTotalBaseShares(adventure)
+			if err != nil {
+				log.Println(err)
+				continue
+			}
+
+			collection.Insert(models.BaseSharesDocument{
+				Adventure:       adventure.String(),
+				TotalBaseShares: uint(totalBaseShares.Uint64()),
+			})
+		}
+
+		return nil
 	}
-	return collection.InsertSupply(supplyDocument)
 }
