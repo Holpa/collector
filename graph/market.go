@@ -38,6 +38,7 @@ query($skip: Int!) {
 		timestamp
 		enabled
 		sold
+		buyer
 		hopper {
 			tokenId
 		}
@@ -54,6 +55,7 @@ type (
 		Price     string       `json:"price"`
 		Enabled   bool         `json:"enabled"`
 		Sold      bool         `json:"sold"`
+		Buyer     string       `json:"buyer"`
 		Timestamp string       `json:"timestamp"`
 		Hopper    MarketHopper `json:"hopper"`
 	}
@@ -77,6 +79,7 @@ func parseMarketListing(listingGraph MarketListingGraph) models.Listing {
 		Enabled:   listingGraph.Enabled,
 		Sold:      listingGraph.Sold,
 		Price:     ParseBigFloat(listingGraph.Price),
+		Buyer:     listingGraph.Buyer,
 		Timestamp: time.Unix(int64(ParseInt(listingGraph.Timestamp)), 0),
 		HopperId:  listingGraph.Hopper.TokenId,
 	}

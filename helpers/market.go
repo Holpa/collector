@@ -14,6 +14,7 @@ func ListingToListingDocument(listing models.Listing) models.ListingDocument {
 		Enabled:   listing.Enabled,
 		Sold:      listing.Sold,
 		Price:     val * math.Pow(10, -18),
+		Buyer:     listing.Buyer,
 		Timestamp: listing.Timestamp,
 		HopperId:  listing.HopperId,
 	}
