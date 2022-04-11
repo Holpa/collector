@@ -39,6 +39,7 @@ query($skip: Int!) {
 		enabled
 		sold
 		buyer
+		owner
 		hopper {
 			tokenId
 		}
@@ -56,6 +57,7 @@ type (
 		Enabled   bool         `json:"enabled"`
 		Sold      bool         `json:"sold"`
 		Buyer     string       `json:"buyer"`
+		Owner     string       `json:"owner"`
 		Timestamp string       `json:"timestamp"`
 		Hopper    MarketHopper `json:"hopper"`
 	}
@@ -80,6 +82,7 @@ func parseMarketListing(listingGraph MarketListingGraph) models.Listing {
 		Sold:      listingGraph.Sold,
 		Price:     ParseBigFloat(listingGraph.Price),
 		Buyer:     listingGraph.Buyer,
+		Seller:    listingGraph.Owner,
 		Timestamp: time.Unix(int64(ParseInt(listingGraph.Timestamp)), 0),
 		HopperId:  listingGraph.Hopper.TokenId,
 	}
