@@ -22,6 +22,12 @@ type (
 	ZoneContract interface {
 		TotalBaseShare(opts *bind.CallOpts) (*big.Int, error)
 		TotalVeShare(opts *bind.CallOpts) (*big.Int, error)
+		BaseSharesBalance(opts *bind.CallOpts, address common.Address) (*big.Int, error)
+		VeSharesBalance(opts *bind.CallOpts, address common.Address) (*big.Int, error)
+		UserMaxFlyGeneration(opts *bind.CallOpts, address common.Address) (*big.Int, error)
+
+		GetUserGeneratedFly(opts *bind.CallOpts, account common.Address, totalUserBaseShares *big.Int) (*big.Int, *big.Int, error)
+		GetUserBonusGeneratedFly(opts *bind.CallOpts, account common.Address, _totalUserBonusShares *big.Int) (*big.Int, *big.Int, error)
 	}
 )
 
@@ -160,4 +166,95 @@ func (client *OnChainClient) GetFlySupply() (*big.Int, error) {
 	}
 
 	return caller.TotalSupply(nil)
+}
+
+func (client *OnChainClient) GetUserBaseSharesBalance(adventure constants.Adventure, user string) (*big.Int, error) {
+	cacheKey := fmt.Sprintf("%s.%s.baseshares-balance", adventure, user)
+
+	if baseSharesBalance, found := client.Cache.Get(cacheKey); found {
+		return baseSharesBalance.(*big.Int), nil
+	}
+
+	caller, err := client.getAdventureCaller(adventure)
+	if err != nil {
+		return big.NewInt(0), err
+	}
+
+	baseSharesBalance, err := caller.BaseSharesBalance(nil, common.HexToAddress(user))
+	if err != nil {
+		return big.NewInt(0), err
+	}
+
+	client.Cache.Set(cacheKey, baseSharesBalance, cache.DefaultExpiration)
+	return baseSharesBalance, nil
+}
+
+func (client *OnChainClient) GetUserVeShareBalance(adventure constants.Adventure, user string) (*big.Int, error) {
+	cacheKey := fmt.Sprintf("%s.%s.veshares-balance", adventure, user)
+
+	if veShareBalance, found := client.Cache.Get(cacheKey); found {
+		return veShareBalance.(*big.Int), nil
+	}
+
+	caller, err := client.getAdventureCaller(adventure)
+	if err != nil {
+		return big.NewInt(0), err
+	}
+
+	veShareBalance, err := caller.VeSharesBalance(nil, common.HexToAddress(user))
+	if err != nil {
+		return big.NewInt(0), err
+	}
+
+	client.Cache.Set(cacheKey, veShareBalance, cache.DefaultExpiration)
+	return veShareBalance, nil
+}
+
+func (client *OnChainClient) GetUserMaxFlyGeneration(adventure constants.Adventure, user string) (*big.Int, error) {
+	cacheKey := fmt.Sprintf("%s.%s.user-max-fly-generation", adventure, user)
+
+	if maxFlyGeneration, found := client.Cache.Get(cacheKey); found {
+		return maxFlyGeneration.(*big.Int), nil
+	}
+
+	caller, err := client.getAdventureCaller(adventure)
+	if err != nil {
+		return big.NewInt(0), err
+	}
+
+	maxFlyGeneration, err := caller.UserMaxFlyGeneration(nil, common.HexToAddress(user))
+	if err != nil {
+		return big.NewInt(0), err
+	}
+
+	client.Cache.Set(cacheKey, maxFlyGeneration, cache.DefaultExpiration)
+	return maxFlyGeneration, nil
+}
+
+func (client *OnChainClient) GetUserGeneratedFly(adventure constants.Adventure, user string) (*big.Int, *big.Int, error) {
+	caller, err := client.getAdventureCaller(adventure)
+	if err != nil {
+		return big.NewInt(0), big.NewInt(0), err
+	}
+
+	baseSharesBalance, err := client.GetUserBaseSharesBalance(adventure, user)
+	if err != nil {
+		return big.NewInt(0), big.NewInt(0), err
+	}
+
+	return caller.GetUserGeneratedFly(nil, common.HexToAddress(user), baseSharesBalance)
+}
+
+func (client *OnChainClient) GetUserBonusGeneratedFly(adventure constants.Adventure, user string) (*big.Int, *big.Int, error) {
+	caller, err := client.getAdventureCaller(adventure)
+	if err != nil {
+		return big.NewInt(0), big.NewInt(0), err
+	}
+
+	baseSharesBalance, err := client.GetUserVeShareBalance(adventure, user)
+	if err != nil {
+		return big.NewInt(0), big.NewInt(0), err
+	}
+
+	return caller.GetUserBonusGeneratedFly(nil, common.HexToAddress(user), baseSharesBalance)
 }
