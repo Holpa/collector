@@ -23,7 +23,7 @@ func (calculator *RewardsCalculator) CalculateBaseEShare(adventure constants.Adv
 		return 0
 	}
 
-	adventureBaseShares, err := calculator.OnChainClient.GetTotalBaseShares(adventure)
+	adventureBaseShares, err := calculator.OnChainClient.GetTotalBaseSharesByAdventure(adventure)
 	if err != nil {
 		return 0
 	}

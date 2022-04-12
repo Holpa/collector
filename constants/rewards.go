@@ -1,6 +1,9 @@
 package constants
 
-const BASE_FLY_EMISSIONS = 100_000
+const (
+	BASE_FLY_EMISSIONS  = 100_000
+	BONUS_FLY_EMISSIONS = 50_000
+)
 
 type FlyEmissions float64
 
