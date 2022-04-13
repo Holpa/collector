@@ -15,6 +15,8 @@ import (
 	"github.com/steschwa/hopper-analytics-collector/models"
 	db "github.com/steschwa/hopper-analytics-collector/mongo"
 	"go.mongodb.org/mongo-driver/mongo"
+
+	"github.com/getsentry/sentry-go"
 )
 
 const (
@@ -30,6 +32,9 @@ func main() {
 	if mongoUri == "" {
 		log.Fatalf("Missing enviroment variable %s\n", MONGO_URI_ENV)
 	}
+
+	initSentry()
+	defer sentry.Flush(2 * time.Second)
 
 	mongoClient, err := db.Connect(mongoUri)
 	if err != nil {
@@ -60,12 +65,30 @@ func main() {
 
 			err := operation(mongoClient)
 			if err != nil {
-				log.Println(err)
+				sentry.CaptureException(err)
 			}
 		}(mongoClient, operation)
 	}
 
 	wg.Wait()
+}
+
+func initSentry() {
+	env := os.Getenv("ENV")
+
+	if env == "" {
+		env = "production"
+	}
+
+	if env == "production" {
+		err := sentry.Init(sentry.ClientOptions{
+			Dsn:         "https://0997d0f7af464bd29da229b2c9f39c05@o1202748.ingest.sentry.io/6328151",
+			Environment: "production",
+		})
+		if err != nil {
+			log.Fatalln(err)
+		}
+	}
 }
 
 func loadAndSaveHoppers(onChainClient *contracts.OnChainClient) Operation {
@@ -198,12 +221,12 @@ func loadAndSaveVotes(onChainClient *contracts.OnChainClient) Operation {
 		for _, adventure := range adventures {
 			votes, err := onChainClient.GetTotalVotesByAdventure(adventure)
 			if err != nil {
-				log.Println(err)
+				sentry.CaptureException(err)
 				continue
 			}
 			veShare, err := onChainClient.GetTotalVeShareByAdventure(adventure)
 			if err != nil {
-				log.Println(err)
+				sentry.CaptureException(err)
 				continue
 			}
 
@@ -215,7 +238,7 @@ func loadAndSaveVotes(onChainClient *contracts.OnChainClient) Operation {
 
 			err = collection.Insert(voteDocument)
 			if err != nil {
-				log.Println(err)
+				sentry.CaptureException(err)
 			}
 		}
 
@@ -240,7 +263,7 @@ func loadAndSaveBaseShares(onChainClient *contracts.OnChainClient) Operation {
 		for _, adventure := range adventures {
 			totalBaseShares, err := onChainClient.GetTotalBaseSharesByAdventure(adventure)
 			if err != nil {
-				log.Println(err)
+				sentry.CaptureException(err)
 				continue
 			}
 
