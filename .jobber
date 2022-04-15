@@ -8,9 +8,59 @@ resultSinks:
           - stderr
 
 jobs:
-    HopperCollector:
-        cmd: "/home/jobberuser/hopper-analytics-collector/collect"
+    CollectHoppers:
+        cmd: "/home/jobberuser/hopper-analytics-collector/collect hoppers"
         time: "0 */2 * * * *"
+        onError: Continue
+        notifyOnSuccess:
+            - *log
+        notifyOnError:
+            - *log
+        notifyOnFailure:
+            - *log
+    CollectMarkets:
+        cmd: "/home/jobberuser/hopper-analytics-collector/collect markets"
+        time: "0 */5 * * * *"
+        onError: Continue
+        notifyOnSuccess:
+            - *log
+        notifyOnError:
+            - *log
+        notifyOnFailure:
+            - *log
+    CollectPrices:
+        cmd: "/home/jobberuser/hopper-analytics-collector/collect prices"
+        time: "0 */5 * * * *"
+        onError: Continue
+        notifyOnSuccess:
+            - *log
+        notifyOnError:
+            - *log
+        notifyOnFailure:
+            - *log
+    CollectBaseShares:
+        cmd: "/home/jobberuser/hopper-analytics-collector/collect base-shares"
+        time: "0 0 * * * *"
+        onError: Continue
+        notifyOnSuccess:
+            - *log
+        notifyOnError:
+            - *log
+        notifyOnFailure:
+            - *log
+    CollectVotes:
+        cmd: "/home/jobberuser/hopper-analytics-collector/collect votes"
+        time: "0 0 * * * *"
+        onError: Continue
+        notifyOnSuccess:
+            - *log
+        notifyOnError:
+            - *log
+        notifyOnFailure:
+            - *log
+    CollectFlySupply:
+        cmd: "/home/jobberuser/hopper-analytics-collector/collect base-shares"
+        time: "0 0 12 * * *"
         onError: Continue
         notifyOnSuccess:
             - *log
