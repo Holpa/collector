@@ -33,3 +33,18 @@ func (col *SuppliesCollection) Insert(supply models.SupplyDocument) error {
 	)
 	return err
 }
+
+func (col *SuppliesCollection) InsertMany(supplies []models.SupplyDocument) error {
+	collection := col.GetCollection()
+
+	data := make([]interface{}, len(supplies))
+	for i, supply := range supplies {
+		data[i] = supply
+	}
+
+	_, err := collection.InsertMany(
+		context.Background(),
+		data,
+	)
+	return err
+}

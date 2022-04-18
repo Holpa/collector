@@ -1,6 +1,7 @@
 package helpers
 
 import (
+	"fmt"
 	"math"
 	"strings"
 
@@ -33,6 +34,8 @@ func HopperToHopperDocument(hopper models.Hopper, rewardsCalculator *RewardsCalc
 		hopperAdventure = ""
 	}
 
+	image := fmt.Sprintf("https://hoppers.mypinata.cloud/ipfs/QmPWaQSContemvXU21KvLQNhtgqtSgQbYVFAfz8fn4QdsL/%s.png", hopper.TokenId)
+
 	return models.HopperDocument{
 		TokenId:           hopper.TokenId,
 		Strength:          hopper.Strength,
@@ -41,7 +44,7 @@ func HopperToHopperDocument(hopper models.Hopper, rewardsCalculator *RewardsCalc
 		Intelligence:      hopper.Intelligence,
 		Fertility:         hopper.Fertility,
 		Level:             hopper.Level,
-		Image:             hopper.Image,
+		Image:             image,
 		InAdventure:       hopper.Adventure,
 		Adventure:         hopperAdventure,
 		CanEnterPond:      true,

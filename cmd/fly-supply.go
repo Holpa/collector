@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/steschwa/hopper-analytics-collector/models"
 	db "github.com/steschwa/hopper-analytics-collector/mongo"
+	"github.com/steschwa/hopper-analytics-collector/utils"
 )
 
 func RegisterFlySupplyCmd(root *cobra.Command) {
@@ -26,9 +27,10 @@ var flySupplyCommand = &cobra.Command{
 			log.Fatalln(err)
 		}
 
+		flySupplyConverted, _ := utils.ToDecimal(flySupply, 18).Float64()
 		supplyDocument := models.SupplyDocument{
 			Type:   models.FLY_SUPPLY,
-			Supply: models.NewBigInt(flySupply),
+			Supply: flySupplyConverted,
 		}
 
 		collection := &db.SuppliesCollection{

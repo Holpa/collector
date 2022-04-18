@@ -1,7 +1,7 @@
 package constants
 
 const (
-	BASE_FLY_EMISSIONS  = 100_000
+	BASE_FLY_EMISSIONS  = 85_000
 	BONUS_FLY_EMISSIONS = 50_000
 )
 

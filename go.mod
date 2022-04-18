@@ -7,6 +7,7 @@ require (
 	github.com/getsentry/sentry-go v0.13.0
 	github.com/machinebox/graphql v0.2.2
 	github.com/patrickmn/go-cache v2.1.0+incompatible
+	github.com/shopspring/decimal v1.3.1
 	github.com/spf13/cobra v1.4.0
 	go.mongodb.org/mongo-driver v1.8.4
 )
