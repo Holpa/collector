@@ -124,6 +124,15 @@ func (client *OnChainClient) GetFlySupply() (*big.Int, error) {
 	return caller.TotalSupply(nil)
 }
 
+func (client *OnChainClient) GetFlyBurned() (*big.Int, error) {
+	caller, err := client.getFlyCaller()
+	if err != nil {
+		return big.NewInt(0), err
+	}
+
+	return caller.BalanceOf(nil, common.HexToAddress(constants.NULL_ADDRESS))
+}
+
 // ----------------------------------------
 // Contract read wrappers - Base share
 // ----------------------------------------
