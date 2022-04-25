@@ -22,6 +22,7 @@ func main() {
 	cmd.RegisterVotesCmd(rootCmd)
 	cmd.RegisterBaseSharesCmd(rootCmd)
 	cmd.RegisterMigrateSupplyCmd(rootCmd)
+	cmd.RegisterHopperHoldersCmd(rootCmd)
 
 	rootCmd.Execute()
 }

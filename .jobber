@@ -68,3 +68,13 @@ jobs:
             - *log
         notifyOnFailure:
             - *log
+    CollectHopperHolders:
+        cmd: "/home/jobberuser/hopper-analytics-collector/collect hopper-holders"
+        time: "0 0 * * * *"
+        onError: Continue
+        notifyOnSuccess:
+            - *log
+        notifyOnError:
+            - *log
+        notifyOnFailure:
+            - *log
