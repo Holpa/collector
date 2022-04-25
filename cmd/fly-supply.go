@@ -6,6 +6,7 @@ import (
 
 	"github.com/getsentry/sentry-go"
 	"github.com/spf13/cobra"
+	"github.com/steschwa/hopper-analytics-collector/graph"
 	"github.com/steschwa/hopper-analytics-collector/models"
 	db "github.com/steschwa/hopper-analytics-collector/mongo"
 	"github.com/steschwa/hopper-analytics-collector/utils"
@@ -39,11 +40,32 @@ var flySupplyCommand = &cobra.Command{
 		flyAvailable := big.NewInt(0).Sub(flySupply, flyBurned)
 		flyAvailableF, _ := utils.ToDecimal(flyAvailable, 18).Float64()
 
+		transfersGraph := graph.NewTransfersGraphClient()
+		totalDeposited, err := transfersGraph.FetchTotalDeposited()
+		if err != nil {
+			sentry.CaptureException(err)
+			log.Fatalln(err)
+		}
+		totalDepositedF, _ := utils.ToDecimal(totalDeposited.String(), 18).Float64()
+
+		totalWidthdrawn, err := transfersGraph.FetchTotalWithdrawn()
+		if err != nil {
+			sentry.CaptureException(err)
+			log.Fatalln(err)
+		}
+		totalWidthdrawnF, _ := utils.ToDecimal(totalWidthdrawn.String(), 18).Float64()
+
+		currentStaked := totalDepositedF - totalWidthdrawnF
+
+		free := flyAvailableF - currentStaked
+
 		supplyDocument := models.SupplyDocument{
 			Type:      models.FLY_SUPPLY,
 			Supply:    flySupplyF,
 			Burned:    flyBurnedF,
 			Available: flyAvailableF,
+			Staked:    currentStaked,
+			Free:      free,
 		}
 
 		collection := &db.SuppliesCollection{

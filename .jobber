@@ -40,7 +40,7 @@ jobs:
             - *log
     CollectBaseShares:
         cmd: "/home/jobberuser/hopper-analytics-collector/collect base-shares"
-        time: "0 0 * * * *"
+        time: "0 1 * * * *"
         onError: Continue
         notifyOnSuccess:
             - *log
@@ -50,7 +50,7 @@ jobs:
             - *log
     CollectVotes:
         cmd: "/home/jobberuser/hopper-analytics-collector/collect votes"
-        time: "0 0 * * * *"
+        time: "0 2 * * * *"
         onError: Continue
         notifyOnSuccess:
             - *log
@@ -59,8 +59,8 @@ jobs:
         notifyOnFailure:
             - *log
     CollectFlySupply:
-        cmd: "/home/jobberuser/hopper-analytics-collector/collect base-shares"
-        time: "0 0 12 * * *"
+        cmd: "/home/jobberuser/hopper-analytics-collector/collect fly-supply"
+        time: "0 3 * * * *"
         onError: Continue
         notifyOnSuccess:
             - *log
@@ -70,7 +70,7 @@ jobs:
             - *log
     CollectHopperHolders:
         cmd: "/home/jobberuser/hopper-analytics-collector/collect hopper-holders"
-        time: "0 0 * * * *"
+        time: "0 4 * * * *"
         onError: Continue
         notifyOnSuccess:
             - *log

@@ -13,6 +13,15 @@ func ParseInt(value string) int {
 	return int(parsed)
 }
 
+func ParseBigInt(value string) *big.Int {
+	b := big.NewInt(0)
+	v, ok := b.SetString(value, 10)
+	if !ok {
+		return big.NewInt(0)
+	}
+	return v
+}
+
 func ParseBigFloat(value string) *big.Float {
 	b := big.NewFloat(0)
 	v, ok := b.SetString(value)

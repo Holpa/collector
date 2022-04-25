@@ -11,6 +11,8 @@ type (
 		Supply    float64    `bson:"supply"`
 		Burned    float64    `bson:"burned"`
 		Available float64    `bson:"available"`
+		Staked    float64    `bson:"staked"`
+		Free      float64    `bson:"free"`
 	}
 )
 
