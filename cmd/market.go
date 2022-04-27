@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"log"
 
 	"github.com/getsentry/sentry-go"
@@ -20,6 +21,7 @@ var marketsCommand = &cobra.Command{
 	Short: "Load and save a snapshot of all market listings",
 	Run: func(cmd *cobra.Command, args []string) {
 		mongoClient := GetMongo()
+		defer mongoClient.Disconnect(context.Background())
 
 		graph := graph.NewMarketsGraphClient()
 

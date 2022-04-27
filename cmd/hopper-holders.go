@@ -28,6 +28,7 @@ var hopperHoldersCommand = &cobra.Command{
 	Short: "Save current hopper holders count",
 	Run: func(cmd *cobra.Command, args []string) {
 		mongoClient := GetMongo()
+		defer mongoClient.Disconnect(context.Background())
 
 		hoppersCollection := &db.HoppersCollection{
 			Connection: mongoClient,

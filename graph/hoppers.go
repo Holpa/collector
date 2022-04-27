@@ -121,7 +121,7 @@ func parseHopperListing(listingGraph HopperListingGraph) models.Listing {
 // ----------------------------------------
 
 func (client *HoppersGraphClient) FetchAllHoppers() ([]models.Hopper, error) {
-	hoppers := make([]models.Hopper, 0)
+	hoppers := make([]models.Hopper, constants.HOPPERS_TOTAL_SUPPLY)
 
 	for i := 0; i <= constants.HOPPERS_TOTAL_SUPPLY; i += 1000 {
 		req := graphql.NewRequest(GET_HOPPERS_QUERY)
@@ -132,8 +132,8 @@ func (client *HoppersGraphClient) FetchAllHoppers() ([]models.Hopper, error) {
 			return []models.Hopper{}, err
 		}
 
-		for _, hopper := range res.HopperNFTs {
-			hoppers = append(hoppers, parseHopper(hopper))
+		for i, hopper := range res.HopperNFTs {
+			hoppers[i] = parseHopper(hopper)
 		}
 	}
 
