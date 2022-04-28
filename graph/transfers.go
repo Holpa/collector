@@ -9,7 +9,6 @@ import (
 	"github.com/machinebox/graphql"
 	"github.com/shopspring/decimal"
 	"github.com/steschwa/hopper-analytics-collector/constants"
-	"github.com/steschwa/hopper-analytics-collector/contracts"
 )
 
 type (
@@ -46,26 +45,6 @@ query($before: Int!, $methodId: String!) {
 		timestamp
 	}
 }`, constants.VE_FLY_CONTRACT)
-
-var GET_CLAIMED_TRANSFERS = fmt.Sprintf(`
-query($before: Int!, $contract: String!, $user: String!) {
-	transfers(
-		where: {
-			methodId: "%s",
-			contract: $contract,
-			to: $user,
-			timestamp_lt: $before
-		},
-		orderBy: timestamp,
-		orderDirection: desc,
-		first: 1000
-	) {
-		contract
-		amount
-		to
-		timestamp
-	}
-}`, constants.METHOD_ID_CLAIM)
 
 // ----------------------------------------
 // Graph responses
@@ -191,13 +170,4 @@ func (client *TransfersGraphClient) FetchTotalWithdrawn() (decimal.Decimal, erro
 	}
 
 	return total, nil
-}
-
-func (client *TransfersGraphClient) FetchClaimedTransfers(adventure constants.Adventure, user string) ([]Transfer, error) {
-	req := graphql.NewRequest(GET_CLAIMED_TRANSFERS)
-	adventureContractAddr := contracts.GetContractByAdventure(adventure)
-	req.Var("contract", adventureContractAddr)
-	req.Var("user", user)
-
-	return client.FetchTransfers(req)
 }
