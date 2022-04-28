@@ -92,7 +92,7 @@ func (client *OnChainClient) getAdventureCaller(adventure constants.Adventure) (
 	return nil, errors.New("unknown adventure")
 }
 
-func getContractByAdventure(adventure constants.Adventure) string {
+func GetContractByAdventure(adventure constants.Adventure) string {
 	switch adventure {
 	case constants.AdventurePond:
 		return constants.ADVENTURE_POND_CONTRACT
@@ -195,7 +195,7 @@ func (client *OnChainClient) GetTotalVotesByAdventure(adventure constants.Advent
 		return big.NewInt(0), err
 	}
 
-	adventureContract := getContractByAdventure(adventure)
+	adventureContract := GetContractByAdventure(adventure)
 
 	votes, err := caller.ZonesVotes(nil, common.HexToAddress(adventureContract))
 	if err != nil {
@@ -218,7 +218,7 @@ func (client *OnChainClient) GetUserVotesByAdventure(adventure constants.Adventu
 		return big.NewInt(0), err
 	}
 
-	adventureContract := getContractByAdventure(adventure)
+	adventureContract := GetContractByAdventure(adventure)
 	veShareBalance, err := caller.ZonesUserVotes(nil, common.HexToAddress(adventureContract), common.HexToAddress(user))
 	if err != nil {
 		return big.NewInt(0), err

@@ -14,3 +14,16 @@ const (
 
 	VE_FLY_CONTRACT = "0xbaF9a6F8A8AFd4BE0d85Ca40f025Bf364fA27324"
 )
+
+type (
+	ContractMethodId string
+)
+
+const (
+	METHOD_ID_CLAIM              ContractMethodId = "0x4e71d92d"
+	METHOD_ID_LEVEl_UP           ContractMethodId = "0x0c679fa0"
+	METHOD_ID_VE_FLY_VOTE        ContractMethodId = "0xc9d27afe"
+	METHOD_ID_FLY_STAKE_DEPOSIT  ContractMethodId = "0xb6b55f25"
+	METHOD_ID_FLY_STAKE_WITHDRAW ContractMethodId = "0x2e1a7d4d"
+	METHOD_ID_BREEDING_ENTER     ContractMethodId = "0xa59f3e0c"
+)

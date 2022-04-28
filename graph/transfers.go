@@ -9,11 +9,7 @@ import (
 	"github.com/machinebox/graphql"
 	"github.com/shopspring/decimal"
 	"github.com/steschwa/hopper-analytics-collector/constants"
-)
-
-const (
-	METHOD_ID_DEPOSIT  = "0xb6b55f25"
-	METHOD_ID_WITHDRAW = "0x2e1a7d4d"
+	"github.com/steschwa/hopper-analytics-collector/contracts"
 )
 
 type (
@@ -44,10 +40,32 @@ query($before: Int!, $methodId: String!) {
 		orderDirection: desc,
 		first: 1000
 	) {
+		contract
 		amount
+		to
 		timestamp
 	}
 }`, constants.VE_FLY_CONTRACT)
+
+var GET_CLAIMED_TRANSFERS = fmt.Sprintf(`
+query($before: Int!, $contract: String!, $user: String!) {
+	transfers(
+		where: {
+			methodId: "%s",
+			contract: $contract,
+			to: $user,
+			timestamp_lt: $before
+		},
+		orderBy: timestamp,
+		orderDirection: desc,
+		first: 1000
+	) {
+		contract
+		amount
+		to
+		timestamp
+	}
+}`, constants.METHOD_ID_CLAIM)
 
 // ----------------------------------------
 // Graph responses
@@ -55,17 +73,30 @@ query($before: Int!, $methodId: String!) {
 
 type (
 	TransferGraph struct {
+		Contract  string `json:"contract"`
 		Amount    string `json:"amount"`
+		To        string `json:"to"`
 		Timestamp string `json:"timestamp"`
 	}
-
 	TransfersResponse struct {
 		Transfers []TransferGraph `json:"transfers"`
 	}
-
 	Transfer struct {
+		Contract  string
 		Amount    *big.Int
+		To        string
 		Timestamp time.Time
+	}
+)
+
+// ----------------------------------------
+// Graph request filters
+// ----------------------------------------
+
+type (
+	TransfersClaimedFilter struct {
+		Adventure constants.Adventure
+		User      string
 	}
 )
 
@@ -75,7 +106,9 @@ type (
 
 func parseTransfer(transferGraph TransferGraph) Transfer {
 	return Transfer{
+		Contract:  transferGraph.Contract,
 		Amount:    ParseBigInt(transferGraph.Amount),
+		To:        transferGraph.To,
 		Timestamp: time.Unix(int64(ParseUInt(transferGraph.Timestamp)), 0),
 	}
 }
@@ -84,70 +117,87 @@ func parseTransfer(transferGraph TransferGraph) Transfer {
 // Query functions
 // ----------------------------------------
 
-func (client *TransfersGraphClient) FetchTotalDeposited() (decimal.Decimal, error) {
-	total := decimal.NewFromInt(0)
+func (client *TransfersGraphClient) FetchTransfers(req *graphql.Request) ([]Transfer, error) {
+	transfers := []Transfer{}
 
 	queryBeforeTs := time.Now()
 	for {
 		unixTs := queryBeforeTs.Unix()
-		req := graphql.NewRequest(GET_STAKED_TRANSFERS)
 		req.Var("before", unixTs)
-		req.Var("methodId", METHOD_ID_DEPOSIT)
 
 		res := &TransfersResponse{}
 		if err := client.Graph.Run(context.Background(), req, res); err != nil {
-			return decimal.NewFromInt(0), err
+			return []Transfer{}, err
 		}
 
 		for _, transferGraph := range res.Transfers {
 			transfer := parseTransfer(transferGraph)
+			transfers = append(transfers, transfer)
 
-			amountDec, err := decimal.NewFromString(transfer.Amount.String())
-			if err != nil {
-				return decimal.NewFromInt(0), err
-			}
-			total = total.Add(amountDec)
 			queryBeforeTs = transfer.Timestamp
 		}
 
 		if len(res.Transfers) < 1000 {
 			break
 		}
+	}
+
+	return transfers, nil
+}
+
+func (client *TransfersGraphClient) FetchDepositTransfers() ([]Transfer, error) {
+	req := graphql.NewRequest(GET_STAKED_TRANSFERS)
+	req.Var("methodId", constants.METHOD_ID_FLY_STAKE_DEPOSIT)
+	return client.FetchTransfers(req)
+}
+
+func (client *TransfersGraphClient) FetchTotalDeposited() (decimal.Decimal, error) {
+	depositTransfers, err := client.FetchDepositTransfers()
+	if err != nil {
+		return decimal.NewFromInt(0), err
+	}
+
+	total := decimal.NewFromInt(0)
+	for _, transfer := range depositTransfers {
+		amountDec, err := decimal.NewFromString(transfer.Amount.String())
+		if err != nil {
+			return decimal.NewFromInt(0), err
+		}
+		total = total.Add(amountDec)
 	}
 
 	return total, nil
 }
 
+func (client *TransfersGraphClient) FetchWithdrawTransfers() ([]Transfer, error) {
+	req := graphql.NewRequest(GET_STAKED_TRANSFERS)
+	req.Var("methodId", constants.METHOD_ID_FLY_STAKE_WITHDRAW)
+	return client.FetchTransfers(req)
+}
+
 func (client *TransfersGraphClient) FetchTotalWithdrawn() (decimal.Decimal, error) {
+	withdrawTransfers, err := client.FetchWithdrawTransfers()
+	if err != nil {
+		return decimal.NewFromInt(0), err
+	}
+
 	total := decimal.NewFromInt(0)
-
-	queryBeforeTs := time.Now()
-	for {
-		unixTs := queryBeforeTs.Unix()
-		req := graphql.NewRequest(GET_STAKED_TRANSFERS)
-		req.Var("before", unixTs)
-		req.Var("methodId", METHOD_ID_WITHDRAW)
-
-		res := &TransfersResponse{}
-		if err := client.Graph.Run(context.Background(), req, res); err != nil {
+	for _, transfer := range withdrawTransfers {
+		amountDec, err := decimal.NewFromString(transfer.Amount.String())
+		if err != nil {
 			return decimal.NewFromInt(0), err
 		}
-
-		for _, transferGraph := range res.Transfers {
-			transfer := parseTransfer(transferGraph)
-
-			amountDec, err := decimal.NewFromString(transfer.Amount.String())
-			if err != nil {
-				return decimal.NewFromInt(0), err
-			}
-			total = total.Add(amountDec)
-			queryBeforeTs = transfer.Timestamp
-		}
-
-		if len(res.Transfers) < 1000 {
-			break
-		}
+		total = total.Add(amountDec)
 	}
 
 	return total, nil
+}
+
+func (client *TransfersGraphClient) FetchClaimedTransfers(adventure constants.Adventure, user string) ([]Transfer, error) {
+	req := graphql.NewRequest(GET_CLAIMED_TRANSFERS)
+	adventureContractAddr := contracts.GetContractByAdventure(adventure)
+	req.Var("contract", adventureContractAddr)
+	req.Var("user", user)
+
+	return client.FetchTransfers(req)
 }
