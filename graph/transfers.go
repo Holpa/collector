@@ -39,9 +39,11 @@ query($before: Int!, $methodId: String!) {
 		orderDirection: desc,
 		first: 1000
 	) {
+		from
+		to
+		methodId
 		contract
 		amount
-		to
 		timestamp
 	}
 }`, constants.VE_FLY_CONTRACT)
@@ -52,18 +54,22 @@ query($before: Int!, $methodId: String!) {
 
 type (
 	TransferGraph struct {
+		From      string `json:"from"`
+		To        string `json:"to"`
+		MethodId  string `json:"methodId"`
 		Contract  string `json:"contract"`
 		Amount    string `json:"amount"`
-		To        string `json:"to"`
 		Timestamp string `json:"timestamp"`
 	}
 	TransfersResponse struct {
 		Transfers []TransferGraph `json:"transfers"`
 	}
 	Transfer struct {
+		From      string
+		To        string
+		MethodId  string
 		Contract  string
 		Amount    *big.Int
-		To        string
 		Timestamp time.Time
 	}
 )
@@ -85,12 +91,26 @@ type (
 
 func parseTransfer(transferGraph TransferGraph) Transfer {
 	return Transfer{
+		From:      transferGraph.From,
+		To:        transferGraph.To,
+		MethodId:  transferGraph.MethodId,
 		Contract:  transferGraph.Contract,
 		Amount:    ParseBigInt(transferGraph.Amount),
-		To:        transferGraph.To,
 		Timestamp: time.Unix(int64(ParseUInt(transferGraph.Timestamp)), 0),
 	}
 }
+
+// ----------------------------------------
+// Query filters
+// ----------------------------------------
+
+type (
+	TransfersFilter struct {
+		Direction constants.TransferDirection
+		User      string
+		MethodId  constants.TransferMethodId
+	}
+)
 
 // ----------------------------------------
 // Query functions
@@ -170,4 +190,66 @@ func (client *TransfersGraphClient) FetchTotalWithdrawn() (decimal.Decimal, erro
 	}
 
 	return total, nil
+}
+
+func (client *TransfersGraphClient) FetchFilteredTransfers(filter TransfersFilter) ([]Transfer, error) {
+	parameters := map[string]string{
+		"$before": "Int!",
+	}
+	requestVars := map[string]string{}
+	where := map[string]string{
+		"timestamp_lt": "$before",
+	}
+
+	if filter.User != "" {
+		if filter.Direction == constants.TransferDirectionToUser {
+			parameters["$to"] = "String!"
+			requestVars["to"] = filter.User
+			where["to"] = "$to"
+		} else if filter.Direction == constants.TransferDirectionFromUser {
+			parameters["$from"] = "String!"
+			requestVars["from"] = filter.User
+			where["from"] = "$from"
+		}
+	}
+	if filter.MethodId != constants.METHOD_ID_ANY {
+		parameters["$methodId"] = "String!"
+		requestVars["methodId"] = string(filter.MethodId)
+		where["methodId"] = "$methodId"
+	}
+
+	urlifiedQuery := ""
+	for key, value := range parameters {
+		urlifiedQuery += fmt.Sprintf("%s: %s,", key, value)
+	}
+
+	urlifiedWhere := ""
+	for key, value := range where {
+		urlifiedWhere += fmt.Sprintf("%s: %s,", key, value)
+	}
+
+	query := fmt.Sprintf(`
+		query(%s) {
+			transfers(
+				where: {%s},
+				orderBy: timestamp,
+				orderDirection: desc,
+				first: 1000
+			) {
+				from
+				to
+				methodId
+				contract
+				amount
+				timestamp
+			}
+		}
+	`, urlifiedQuery, urlifiedWhere)
+
+	req := graphql.NewRequest(query)
+
+	for key, value := range requestVars {
+		req.Var(key, value)
+	}
+	return client.FetchTransfers(req)
 }
