@@ -22,6 +22,10 @@ const (
 	TransferMethodFlyStakeDeposit
 	TransferMethodFlyStakeWithdraw
 	TransferMethodBreedingEnter
+	TransferMethodChangeName
+	TransferMethodSellFly
+	TransferMethodProvideLiquidity
+	TransferMethodRemoveLiquidity
 )
 
 const (
@@ -33,6 +37,10 @@ const (
 	METHOD_ID_FLY_STAKE_DEPOSIT  TransferMethodId = "0xb6b55f25"
 	METHOD_ID_FLY_STAKE_WITHDRAW TransferMethodId = "0x2e1a7d4d"
 	METHOD_ID_BREEDING_ENTER     TransferMethodId = "0xa59f3e0c"
+	METHOD_ID_CHANGE_NAME        TransferMethodId = "0x8eb3be28"
+	METHOD_ID_SELL_FLY           TransferMethodId = "0x676528d1"
+	METHOD_ID_PROVIDE_LIQUIDITY  TransferMethodId = "0xf91b3f72"
+	METHOD_ID_REMOVE_LIQUIDITY   TransferMethodId = "0x2c407024"
 )
 
 func TransferDirectionFromString(value string) TransferDirection {
@@ -76,6 +84,14 @@ func TransferMethodFromString(transferMethod string) TransferMethod {
 		return TransferMethodFlyStakeWithdraw
 	case "breeding":
 		return TransferMethodBreedingEnter
+	case "change-name":
+		return TransferMethodChangeName
+	case "sell-fly":
+		return TransferMethodSellFly
+	case "provide-liquidity":
+		return TransferMethodProvideLiquidity
+	case "remove-liquidity":
+		return TransferMethodRemoveLiquidity
 	default:
 		return TransferMethodAny
 	}
@@ -98,6 +114,14 @@ func TransferMethodFromMethodId(methodId string) TransferMethod {
 		return TransferMethodFlyStakeWithdraw
 	case string(METHOD_ID_BREEDING_ENTER):
 		return TransferMethodBreedingEnter
+	case string(METHOD_ID_CHANGE_NAME):
+		return TransferMethodChangeName
+	case string(METHOD_ID_SELL_FLY):
+		return TransferMethodSellFly
+	case string(METHOD_ID_PROVIDE_LIQUIDITY):
+		return TransferMethodProvideLiquidity
+	case string(METHOD_ID_REMOVE_LIQUIDITY):
+		return TransferMethodRemoveLiquidity
 	default:
 		return TransferMethodAny
 	}
@@ -118,6 +142,14 @@ func (transferMethod TransferMethod) String() string {
 		return "stake-withdraw"
 	case TransferMethodBreedingEnter:
 		return "breeding"
+	case TransferMethodChangeName:
+		return "change-name"
+	case TransferMethodSellFly:
+		return "sell-fly"
+	case TransferMethodProvideLiquidity:
+		return "provide-liquidity"
+	case TransferMethodRemoveLiquidity:
+		return "remove-liquidity"
 	default:
 		return "any"
 	}
@@ -138,6 +170,14 @@ func (transferMethod TransferMethod) ToMethodId() TransferMethodId {
 		return METHOD_ID_FLY_STAKE_WITHDRAW
 	case TransferMethodBreedingEnter:
 		return METHOD_ID_BREEDING_ENTER
+	case TransferMethodChangeName:
+		return METHOD_ID_CHANGE_NAME
+	case TransferMethodSellFly:
+		return METHOD_ID_SELL_FLY
+	case TransferMethodProvideLiquidity:
+		return METHOD_ID_PROVIDE_LIQUIDITY
+	case TransferMethodRemoveLiquidity:
+		return METHOD_ID_REMOVE_LIQUIDITY
 	default:
 		return METHOD_ID_ANY
 	}
