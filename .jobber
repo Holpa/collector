@@ -30,7 +30,7 @@ jobs:
             - *log
     CollectPrices:
         cmd: "/home/jobberuser/hopper-analytics-collector/collect prices"
-        time: "0 */5 * * * *"
+        time: "0 */10 * * * *"
         onError: Continue
         notifyOnSuccess:
             - *log

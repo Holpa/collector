@@ -3,9 +3,11 @@ package coingecko
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/steschwa/hopper-analytics-collector/constants"
 )
@@ -39,6 +41,12 @@ func toStringSlice[T constants.CoinGeckoId | constants.CoinGeckoCurrency](value 
 type (
 	CurrentPrice     map[constants.CoinGeckoCurrency]float64
 	CurrentPriceData map[constants.CoinGeckoId]CurrentPrice
+
+	HistoricalPrice          []float64
+	HistoricalPricesData     []HistoricalPrice
+	HistoricalPricesResponse struct {
+		Prices HistoricalPricesData `json:"prices"`
+	}
 )
 
 // ----------------------------------------
@@ -83,4 +91,36 @@ func (client *CoinGeckoClient) CurrentPrice(ids []constants.CoinGeckoId, currenc
 	}
 
 	return data, nil
+}
+
+func (client *CoinGeckoClient) HistoricalPrices(id constants.CoinGeckoId, currency constants.CoinGeckoCurrency) (HistoricalPricesData, error) {
+	params := url.Values{}
+	params.Add("vs_currency", string(currency))
+
+	daysMax := 89
+	notBefore := time.Unix(constants.HOPPERS_FLY_TRADING_START_TS, 0)
+	daysDiff := time.Since(notBefore).Hours() / 24
+
+	days := int(math.Floor(math.Min(float64(daysMax), daysDiff)))
+
+	params.Add("days", fmt.Sprint(days))
+
+	url := fmt.Sprintf("%s/coins/%s/market_chart?%s", constants.COINGECKO_ENDPOINT, string(id), params.Encode())
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return HistoricalPricesData{}, err
+	}
+
+	res, err := client.HttpClient.Do(req)
+	if err != nil {
+		return HistoricalPricesData{}, err
+	}
+	defer res.Body.Close()
+
+	data := HistoricalPricesResponse{}
+	if err = json.NewDecoder(res.Body).Decode(&data); err != nil {
+		return HistoricalPricesData{}, err
+	}
+
+	return data.Prices, nil
 }

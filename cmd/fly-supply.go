@@ -32,6 +32,10 @@ var flySupplyCommand = &cobra.Command{
 		}
 		flySupplyF, _ := utils.ToDecimal(flySupply, 18).Float64()
 
+		// TODO Improve loading burned FLY
+		// They are not neccessary sent to 0x0 address but just reduced from total supply (atleast with leveling up)
+		// One can listen for the `ERC20(FLY).Transfer` event with the 0x0 address being the recipient
+		// Also more investigation of how the Breeding pool handles burning FLY
 		flyBurned, err := onChainClient.GetFlyBurned()
 		if err != nil {
 			sentry.CaptureException(err)

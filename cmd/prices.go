@@ -55,11 +55,6 @@ var pricesCommand = &cobra.Command{
 		pricesCollection := &db.PricesCollection{
 			Connection: mongoClient,
 		}
-		err = pricesCollection.Clear()
-		if err != nil {
-			sentry.CaptureException(err)
-			log.Fatalln(err)
-		}
 
 		err = pricesCollection.InsertMany(priceDocuments)
 		if err != nil {
