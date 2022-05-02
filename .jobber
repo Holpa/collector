@@ -10,7 +10,7 @@ resultSinks:
 jobs:
     CollectHoppers:
         cmd: "/home/jobberuser/hopper-analytics-collector/collect hoppers"
-        time: "0 */2 * * * *"
+        time: "0 */1 * * * *"
         onError: Continue
         notifyOnSuccess:
             - *log

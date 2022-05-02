@@ -17,6 +17,7 @@ const (
 	TransferMethodAny TransferMethod = iota
 	TransferMethodClaim
 	TransferMethodLevelUp
+	TransferMethodMultiLevelUp
 	TransferMethodVeFlyVote
 	TransferMethodFlyStakeDeposit
 	TransferMethodFlyStakeWithdraw
@@ -27,6 +28,7 @@ const (
 	METHOD_ID_ANY                TransferMethodId = ""
 	METHOD_ID_CLAIM              TransferMethodId = "0x4e71d92d"
 	METHOD_ID_LEVEl_UP           TransferMethodId = "0x0c679fa0"
+	METHOD_ID_MULTI_LEVEl_UP     TransferMethodId = "0x6a369d6c"
 	METHOD_ID_VE_FLY_VOTE        TransferMethodId = "0xc9d27afe"
 	METHOD_ID_FLY_STAKE_DEPOSIT  TransferMethodId = "0xb6b55f25"
 	METHOD_ID_FLY_STAKE_WITHDRAW TransferMethodId = "0x2e1a7d4d"
@@ -64,6 +66,8 @@ func TransferMethodFromString(transferMethod string) TransferMethod {
 		return TransferMethodClaim
 	case "level-up":
 		return TransferMethodLevelUp
+	case "multi-level-up":
+		return TransferMethodMultiLevelUp
 	case "vefly-vote":
 		return TransferMethodVeFlyVote
 	case "stake-deposit":
@@ -84,6 +88,8 @@ func TransferMethodFromMethodId(methodId string) TransferMethod {
 		return TransferMethodClaim
 	case string(METHOD_ID_LEVEl_UP):
 		return TransferMethodLevelUp
+	case string(METHOD_ID_MULTI_LEVEl_UP):
+		return TransferMethodMultiLevelUp
 	case string(METHOD_ID_VE_FLY_VOTE):
 		return TransferMethodVeFlyVote
 	case string(METHOD_ID_FLY_STAKE_DEPOSIT):
@@ -102,6 +108,8 @@ func (transferMethod TransferMethod) String() string {
 		return "claim"
 	case TransferMethodLevelUp:
 		return "level-up"
+	case TransferMethodMultiLevelUp:
+		return "multi-level-up"
 	case TransferMethodVeFlyVote:
 		return "vefly-vote"
 	case TransferMethodFlyStakeDeposit:
@@ -120,6 +128,8 @@ func (transferMethod TransferMethod) ToMethodId() TransferMethodId {
 		return METHOD_ID_CLAIM
 	case TransferMethodLevelUp:
 		return METHOD_ID_LEVEl_UP
+	case TransferMethodMultiLevelUp:
+		return METHOD_ID_MULTI_LEVEl_UP
 	case TransferMethodVeFlyVote:
 		return METHOD_ID_VE_FLY_VOTE
 	case TransferMethodFlyStakeDeposit:
