@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"context"
 	"log"
 
 	"github.com/getsentry/sentry-go"
@@ -19,8 +18,8 @@ var baseSharesCommand = &cobra.Command{
 	Use:   "base-shares",
 	Short: "Load and save curent base shares for adventures",
 	Run: func(cmd *cobra.Command, args []string) {
-		mongoClient := GetMongo()
-		defer mongoClient.Disconnect(context.Background())
+		dbClient := GetMongo()
+		defer dbClient.Disconnect()
 		onChainClient := GetOnChainClient()
 
 		adventures := []constants.Adventure{
@@ -33,7 +32,7 @@ var baseSharesCommand = &cobra.Command{
 		}
 
 		collection := &db.BaseSharesCollection{
-			Connection: mongoClient,
+			Client: dbClient,
 		}
 		for _, adventure := range adventures {
 			totalBaseShares, err := onChainClient.GetTotalBaseSharesByAdventure(adventure)

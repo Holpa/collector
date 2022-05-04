@@ -14,12 +14,12 @@ const (
 
 type (
 	BaseSharesCollection struct {
-		Connection *mongo.Client
+		Client *MongoDbClient
 	}
 )
 
 func (col *BaseSharesCollection) GetCollection() *mongo.Collection {
-	return GetCollection(col.Connection, BASE_SHARES_COLLECTION)
+	return col.Client.Database.Collection(BASE_SHARES_COLLECTION)
 }
 
 func (col *BaseSharesCollection) Insert(baseShares models.BaseSharesDocument) error {

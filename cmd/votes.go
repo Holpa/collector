@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"context"
 	"log"
 
 	"github.com/getsentry/sentry-go"
@@ -19,8 +18,8 @@ var votesCommand = &cobra.Command{
 	Use:   "votes",
 	Short: "Load and save curent votes / veShare for adventures",
 	Run: func(cmd *cobra.Command, args []string) {
-		mongoClient := GetMongo()
-		defer mongoClient.Disconnect(context.Background())
+		dbClient := GetMongo()
+		defer dbClient.Disconnect()
 		onChainClient := GetOnChainClient()
 
 		adventures := []constants.Adventure{
@@ -33,7 +32,7 @@ var votesCommand = &cobra.Command{
 		}
 
 		collection := &db.VotesCollection{
-			Connection: mongoClient,
+			Client: dbClient,
 		}
 
 		for _, adventure := range adventures {

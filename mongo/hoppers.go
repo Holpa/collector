@@ -14,12 +14,12 @@ const (
 
 type (
 	HoppersCollection struct {
-		Connection *mongo.Client
+		Client *MongoDbClient
 	}
 )
 
 func (col *HoppersCollection) GetCollection() *mongo.Collection {
-	return GetCollection(col.Connection, HOPPERS_COLLECTION)
+	return col.Client.Database.Collection(HOPPERS_COLLECTION)
 }
 
 func (col *HoppersCollection) InsertMany(hoppers []models.HopperDocument) error {

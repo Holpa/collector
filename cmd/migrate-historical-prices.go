@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"context"
 	"log"
 	"sync"
 	"time"
@@ -11,7 +10,6 @@ import (
 	"github.com/steschwa/hopper-analytics-collector/constants"
 	"github.com/steschwa/hopper-analytics-collector/models"
 	db "github.com/steschwa/hopper-analytics-collector/mongo"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 func RegisterMigrateHistoricalPrices(root *cobra.Command) {
@@ -22,8 +20,8 @@ var migrateHistoricalPricesCommand = &cobra.Command{
 	Use:   "migrate-historical-prices",
 	Short: "Migrate (load and save) historical FLY and AVAX prices",
 	Run: func(cmd *cobra.Command, args []string) {
-		mongoClient := GetMongo()
-		defer mongoClient.Disconnect(context.Background())
+		dbClient := GetMongo()
+		defer dbClient.Disconnect()
 
 		ids := []constants.CoinGeckoId{
 			constants.COINGECKO_AVAX,
@@ -35,7 +33,7 @@ var migrateHistoricalPricesCommand = &cobra.Command{
 		}
 
 		pricesCollection := &db.PricesCollection{
-			Connection: mongoClient,
+			Client: dbClient,
 		}
 		pricesCollection.Clear()
 
@@ -43,7 +41,7 @@ var migrateHistoricalPricesCommand = &cobra.Command{
 		for _, coinId := range ids {
 			for _, currency := range currencies {
 				wg.Add(1)
-				go func(mongoClient *mongo.Client, coinId constants.CoinGeckoId, currency constants.CoinGeckoCurrency) {
+				go func(dbClient *db.MongoDbClient, coinId constants.CoinGeckoId, currency constants.CoinGeckoCurrency) {
 					defer wg.Done()
 
 					coingeckoClient := coingecko.NewCoinGeckoClient()
@@ -69,13 +67,13 @@ var migrateHistoricalPricesCommand = &cobra.Command{
 					}
 
 					pricesCollection := &db.PricesCollection{
-						Connection: mongoClient,
+						Client: dbClient,
 					}
 					err = pricesCollection.InsertMany(docs)
 					if err != nil {
 						log.Println(err)
 					}
-				}(mongoClient, coinId, currency)
+				}(dbClient, coinId, currency)
 			}
 		}
 

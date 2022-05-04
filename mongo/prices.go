@@ -14,12 +14,12 @@ const (
 
 type (
 	PricesCollection struct {
-		Connection *mongo.Client
+		Client *MongoDbClient
 	}
 )
 
 func (col *PricesCollection) GetCollection() *mongo.Collection {
-	return GetCollection(col.Connection, PRICES_COLLECTION)
+	return col.Client.Database.Collection(PRICES_COLLECTION)
 }
 
 func (col *PricesCollection) Clear() error {

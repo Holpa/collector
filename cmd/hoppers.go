@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"context"
 	"log"
 
 	"github.com/getsentry/sentry-go"
@@ -20,8 +19,8 @@ var hoppersCommand = &cobra.Command{
 	Use:   "hoppers",
 	Short: "Load and save a snapshot of all hoppers",
 	Run: func(cmd *cobra.Command, args []string) {
-		mongoClient := GetMongo()
-		defer mongoClient.Disconnect(context.Background())
+		dbClient := GetMongo()
+		defer dbClient.Disconnect()
 		onChainClient := GetOnChainClient()
 
 		graph := graph.NewHoppersGraphClient()
@@ -35,7 +34,7 @@ var hoppersCommand = &cobra.Command{
 		rewardsCalculator := helpers.NewRewardsCalculator(onChainClient)
 
 		collection := &db.HoppersCollection{
-			Connection: mongoClient,
+			Client: dbClient,
 		}
 
 		err = collection.Clear()

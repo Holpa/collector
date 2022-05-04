@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"context"
 	"log"
 	"math/big"
 
@@ -21,8 +20,8 @@ var flySupplyCommand = &cobra.Command{
 	Use:   "fly-supply",
 	Short: "Load and save current FLY supply",
 	Run: func(cmd *cobra.Command, args []string) {
-		mongoClient := GetMongo()
-		defer mongoClient.Disconnect(context.Background())
+		dbClient := GetMongo()
+		defer dbClient.Disconnect()
 		onChainClient := GetOnChainClient()
 
 		flySupply, err := onChainClient.GetFlySupply()
@@ -75,7 +74,7 @@ var flySupplyCommand = &cobra.Command{
 		}
 
 		collection := &db.SuppliesCollection{
-			Connection: mongoClient,
+			Client: dbClient,
 		}
 		err = collection.Insert(supplyDocument)
 		if err != nil {

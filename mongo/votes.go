@@ -14,12 +14,12 @@ const (
 
 type (
 	VotesCollection struct {
-		Connection *mongo.Client
+		Client *MongoDbClient
 	}
 )
 
 func (col *VotesCollection) GetCollection() *mongo.Collection {
-	return GetCollection(col.Connection, VOTES_COLLECTION)
+	return col.Client.Database.Collection(VOTES_COLLECTION)
 }
 
 func (col *VotesCollection) Insert(vote models.VoteDocument) error {

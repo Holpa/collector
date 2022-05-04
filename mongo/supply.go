@@ -14,12 +14,12 @@ const (
 
 type (
 	SuppliesCollection struct {
-		Connection *mongo.Client
+		Client *MongoDbClient
 	}
 )
 
 func (col *SuppliesCollection) GetCollection() *mongo.Collection {
-	return GetCollection(col.Connection, SUPPLY_COLLECTION)
+	return col.Client.Database.Collection(SUPPLY_COLLECTION)
 }
 
 func (col *SuppliesCollection) Insert(supply models.SupplyDocument) error {

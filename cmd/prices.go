@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"context"
 	"log"
 	"time"
 
@@ -21,8 +20,8 @@ var pricesCommand = &cobra.Command{
 	Use:   "prices",
 	Short: "Load and save current crypto prices",
 	Run: func(cmd *cobra.Command, args []string) {
-		mongoClient := GetMongo()
-		defer mongoClient.Disconnect(context.Background())
+		dbClient := GetMongo()
+		defer dbClient.Disconnect()
 		coinGeckoClient := coingecko.NewCoinGeckoClient()
 
 		ids := []constants.CoinGeckoId{
@@ -53,7 +52,7 @@ var pricesCommand = &cobra.Command{
 		}
 
 		pricesCollection := &db.PricesCollection{
-			Connection: mongoClient,
+			Client: dbClient,
 		}
 
 		err = pricesCollection.InsertMany(priceDocuments)
