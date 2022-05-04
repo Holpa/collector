@@ -10,13 +10,11 @@ import (
 )
 
 func HopperToHopperDocument(hopper models.Hopper, rewardsCalculator *RewardsCalculator) models.HopperDocument {
-	listingActive := false
-	listingPrice := 0.0
+	marketPrice := 0.0
 	for _, listing := range hopper.Listings {
 		if listing.Enabled && !listing.Sold {
-			listingActive = true
 			val, _ := listing.Price.Float64()
-			listingPrice = val * math.Pow(10, -18)
+			marketPrice = val * math.Pow(10, -18)
 			break
 		}
 	}
@@ -28,10 +26,26 @@ func HopperToHopperDocument(hopper models.Hopper, rewardsCalculator *RewardsCalc
 	baseFlyForest := rewardsCalculator.CalculateBaseFlyRewards(constants.AdventureForest, hopper)
 	baseFlyGreatLake := rewardsCalculator.CalculateBaseFlyRewards(constants.AdventureGreatLake, hopper)
 
-	adventure, _ := constants.AdventureFromContract(hopper.ChainOwner)
-	hopperAdventure := adventure.String()
-	if !hopper.Adventure {
-		hopperAdventure = ""
+	var activity models.HopperActivity = models.HopperActivityIdle
+
+	chainOwnerLower := strings.ToLower(hopper.ChainOwner)
+	switch chainOwnerLower {
+	case constants.ADVENTURE_POND_CONTRACT:
+		activity = models.HopperActivityPond
+	case constants.ADVENTURE_STREAM_CONTRACT:
+		activity = models.HopperActivityStream
+	case constants.ADVENTURE_SWAMP_CONTRACT:
+		activity = models.HopperActivitySwamp
+	case constants.ADVENTURE_RIVER_CONTRACT:
+		activity = models.HopperActivityRiver
+	case constants.ADVENTURE_FOREST_CONTRACT:
+		activity = models.HopperActivityForest
+	case constants.ADVENTURE_GREAT_LAKE_CONTRACT:
+		activity = models.HopperActivityGreatLake
+	case constants.BREEDING_CONTRACT:
+		activity = models.HopperActivityBreeding
+	case constants.MARKETPLACE_CONTRACT:
+		activity = models.HopperActivityMarketplace
 	}
 
 	image := fmt.Sprintf("https://hoppers.mypinata.cloud/ipfs/QmPWaQSContemvXU21KvLQNhtgqtSgQbYVFAfz8fn4QdsL/%s.png", hopper.TokenId)
@@ -45,8 +59,7 @@ func HopperToHopperDocument(hopper models.Hopper, rewardsCalculator *RewardsCalc
 		Fertility:         hopper.Fertility,
 		Level:             hopper.Level,
 		Image:             image,
-		InAdventure:       hopper.Adventure,
-		Adventure:         hopperAdventure,
+		Activity:          activity,
 		CanEnterPond:      true,
 		CanEnterStream:    true,
 		CanEnterSwamp:     true,
@@ -59,8 +72,7 @@ func HopperToHopperDocument(hopper models.Hopper, rewardsCalculator *RewardsCalc
 		RatingRiver:       CalculateRiverRating(hopper),
 		RatingForest:      CalculateForestRating(hopper),
 		RatingGreatLake:   CalculateGreatLakeRating(hopper),
-		ListingActive:     listingActive,
-		ListingPrice:      listingPrice,
+		MarketPrice:       marketPrice,
 		BaseFlyPond:       baseFlyPond,
 		BaseFlyStream:     baseFlyStream,
 		BaseFlySwamp:      baseFlySwamp,
