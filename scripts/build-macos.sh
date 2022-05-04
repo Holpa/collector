@@ -1,4 +1,4 @@
 WORKDIR=$(pwd)
 cd ..
-go build -o bin/hopper-analytics-collector.macos main.go
+go build -o bin/hopper-shopper-collector.macos main.go
 cd $WORKDIR

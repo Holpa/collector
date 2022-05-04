@@ -9,7 +9,7 @@ resultSinks:
 
 jobs:
     CollectHoppers:
-        cmd: "/home/jobberuser/hopper-analytics-collector/collect hoppers"
+        cmd: "/home/jobberuser/hopper-shopper-collector/collect hoppers"
         time: "0 */1 * * * *"
         onError: Continue
         notifyOnSuccess:
@@ -19,7 +19,7 @@ jobs:
         notifyOnFailure:
             - *log
     CollectMarkets:
-        cmd: "/home/jobberuser/hopper-analytics-collector/collect markets"
+        cmd: "/home/jobberuser/hopper-shopper-collector/collect markets"
         time: "0 */5 * * * *"
         onError: Continue
         notifyOnSuccess:
@@ -29,7 +29,7 @@ jobs:
         notifyOnFailure:
             - *log
     CollectPrices:
-        cmd: "/home/jobberuser/hopper-analytics-collector/collect prices"
+        cmd: "/home/jobberuser/hopper-shopper-collector/collect prices"
         time: "0 */10 * * * *"
         onError: Continue
         notifyOnSuccess:
@@ -39,7 +39,7 @@ jobs:
         notifyOnFailure:
             - *log
     CollectBaseShares:
-        cmd: "/home/jobberuser/hopper-analytics-collector/collect base-shares"
+        cmd: "/home/jobberuser/hopper-shopper-collector/collect base-shares"
         time: "0 1 * * * *"
         onError: Continue
         notifyOnSuccess:
@@ -49,7 +49,7 @@ jobs:
         notifyOnFailure:
             - *log
     CollectVotes:
-        cmd: "/home/jobberuser/hopper-analytics-collector/collect votes"
+        cmd: "/home/jobberuser/hopper-shopper-collector/collect votes"
         time: "0 2 * * * *"
         onError: Continue
         notifyOnSuccess:
@@ -59,7 +59,7 @@ jobs:
         notifyOnFailure:
             - *log
     CollectFlySupply:
-        cmd: "/home/jobberuser/hopper-analytics-collector/collect fly-supply"
+        cmd: "/home/jobberuser/hopper-shopper-collector/collect fly-supply"
         time: "0 3 * * * *"
         onError: Continue
         notifyOnSuccess:
@@ -69,7 +69,7 @@ jobs:
         notifyOnFailure:
             - *log
     CollectHopperHolders:
-        cmd: "/home/jobberuser/hopper-analytics-collector/collect hopper-holders"
+        cmd: "/home/jobberuser/hopper-shopper-collector/collect hopper-holders"
         time: "0 4 * * * *"
         onError: Continue
         notifyOnSuccess:
