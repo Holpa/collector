@@ -78,3 +78,13 @@ jobs:
             - *log
         notifyOnFailure:
             - *log
+    CollectHoppersActivity:
+        cmd: "/home/jobberuser/hopper-shopper-collector/collect hoppers-activity"
+        time: "0 5 */4 * * *"
+        onError: Continue
+        notifyOnSuccess:
+            - *log
+        notifyOnError:
+            - *log
+        notifyOnFailure:
+            - *log
