@@ -98,7 +98,7 @@ func (client *CoinGeckoClient) HistoricalPrices(id constants.CoinGeckoId, curren
 	params.Add("vs_currency", string(currency))
 
 	daysMax := 89
-	notBefore := time.Unix(constants.HOPPERS_FLY_TRADING_START_TS, 0)
+	notBefore := time.Unix(constants.HOPPERS_FLY_TS, 0)
 	daysDiff := time.Since(notBefore).Hours() / 24
 
 	days := int(math.Floor(math.Min(float64(daysMax), daysDiff)))

@@ -2,13 +2,17 @@ package cmd
 
 import (
 	"log"
+	"math"
 	"math/big"
+	"sync"
+	"time"
 
 	"github.com/getsentry/sentry-go"
 	"github.com/spf13/cobra"
+	"github.com/steschwa/hopper-analytics-collector/constants"
 	"github.com/steschwa/hopper-analytics-collector/graph"
 	"github.com/steschwa/hopper-analytics-collector/models"
-	db "github.com/steschwa/hopper-analytics-collector/mongo"
+	"github.com/steschwa/hopper-analytics-collector/mongo"
 	"github.com/steschwa/hopper-analytics-collector/utils"
 )
 
@@ -16,70 +20,144 @@ func RegisterFlySupplyCmd(root *cobra.Command) {
 	root.AddCommand(flySupplyCommand)
 }
 
+const STEP_SECONDS = 60 * 60 * 4
+
+type supplyIntermediate struct {
+	Supply         float64
+	Burned         float64
+	StakeDeposited float64
+	StakeWithdrawn float64
+}
+type graphWithMutation func(client *graph.TransfersGraphClient, from time.Time, to time.Time, intermediate *supplyIntermediate)
+
 var flySupplyCommand = &cobra.Command{
 	Use:   "fly-supply",
-	Short: "Load and save current FLY supply",
+	Short: "Load and save FLY supply",
 	Run: func(cmd *cobra.Command, args []string) {
 		dbClient := GetMongo()
 		defer dbClient.Disconnect()
-		onChainClient := GetOnChainClient()
 
-		flySupply, err := onChainClient.GetFlySupply()
-		if err != nil {
-			sentry.CaptureException(err)
-			log.Fatalln(err)
-		}
-		flySupplyF, _ := utils.ToDecimal(flySupply, 18).Float64()
-
-		// TODO Improve loading burned FLY
-		// They are not neccessary sent to 0x0 address but just reduced from total supply (atleast with leveling up)
-		// One can listen for the `ERC20(FLY).Transfer` event with the 0x0 address being the recipient
-		// Also more investigation of how the Breeding pool handles burning FLY
-		flyBurned, err := onChainClient.GetFlyBurned()
-		if err != nil {
-			sentry.CaptureException(err)
-			log.Fatalln(err)
-		}
-		flyBurnedF, _ := utils.ToDecimal(flyBurned, 18).Float64()
-
-		flyAvailable := big.NewInt(0).Sub(flySupply, flyBurned)
-		flyAvailableF, _ := utils.ToDecimal(flyAvailable, 18).Float64()
-
-		transfersGraph := graph.NewTransfersGraphClient()
-		totalDeposited, err := transfersGraph.FetchTotalDeposited()
-		if err != nil {
-			sentry.CaptureException(err)
-			log.Fatalln(err)
-		}
-		totalDepositedF, _ := utils.ToDecimal(totalDeposited.String(), 18).Float64()
-
-		totalWidthdrawn, err := transfersGraph.FetchTotalWithdrawn()
-		if err != nil {
-			sentry.CaptureException(err)
-			log.Fatalln(err)
-		}
-		totalWidthdrawnF, _ := utils.ToDecimal(totalWidthdrawn.String(), 18).Float64()
-
-		currentStaked := totalDepositedF - totalWidthdrawnF
-
-		free := flyAvailableF - currentStaked
-
-		supplyDocument := models.SupplyDocument{
-			Type:      models.FLY_SUPPLY,
-			Supply:    flySupplyF,
-			Burned:    flyBurnedF,
-			Available: flyAvailableF,
-			Staked:    currentStaked,
-			Free:      free,
-		}
-
-		collection := &db.SuppliesCollection{
+		suppliesCol := &mongo.FlySuppliesCollection{
 			Client: dbClient,
 		}
-		err = collection.Insert(supplyDocument)
+
+		latestSupplies, err := suppliesCol.FindLatest()
 		if err != nil {
 			sentry.CaptureException(err)
 			log.Fatalln(err)
 		}
+
+		from := time.Unix(constants.HOPPERS_FLY_TS, 0)
+		latestSupply := models.FlySupplyDocument{}
+		if len(latestSupplies) >= 1 {
+			doc := latestSupplies[0]
+			latestSupply = doc
+			from = doc.Timestamp
+		}
+
+		diffSeconds := time.Since(from).Seconds()
+		iterations := int(diffSeconds / STEP_SECONDS)
+
+		log.Printf("Querying %d ranges\n", iterations)
+
+		graphClient := graph.NewTransfersGraphClient()
+
+		operations := []graphWithMutation{
+			mintsOperation,
+			burnsOperation,
+			stakeDepositOperation,
+			stakeWithdrawOperation,
+		}
+
+		for i := 0; i < iterations; i++ {
+			intermediate := &supplyIntermediate{}
+			var wg sync.WaitGroup
+
+			start := from.Add(time.Second * STEP_SECONDS * time.Duration(i))
+			end := start.Add(time.Second * STEP_SECONDS)
+
+			log.Printf("%d) %s - %s\n", i, start.Format(time.RFC3339), end.Format(time.RFC3339))
+
+			for _, operation := range operations {
+				wg.Add(1)
+				go func(operation graphWithMutation, from time.Time, to time.Time) {
+					defer wg.Done()
+					operation(graphClient, from, to, intermediate)
+				}(operation, start, end)
+			}
+
+			wg.Wait()
+
+			available := math.Max(0, intermediate.Supply-intermediate.Burned)
+			staked := math.Max(0, intermediate.StakeDeposited-intermediate.StakeWithdrawn)
+			free := math.Max(0, available-staked)
+
+			latestSupply.Timestamp = end
+			latestSupply.Supply += intermediate.Supply
+			latestSupply.Burned += intermediate.Burned
+			latestSupply.Available += available
+			latestSupply.Staked += staked
+			latestSupply.Free += free
+
+			err = suppliesCol.Insert(latestSupply)
+			if err != nil {
+				sentry.CaptureException(err)
+				log.Fatalln(err)
+			}
+		}
 	},
+}
+
+func mintsOperation(client *graph.TransfersGraphClient, from time.Time, to time.Time, intermediate *supplyIntermediate) {
+	transfers, err := client.FetchMints(from, to)
+	if err != nil {
+		sentry.CaptureException(err)
+		log.Fatalln(err)
+		return
+	}
+
+	intermediate.Supply = sumTransfers(transfers)
+}
+func burnsOperation(client *graph.TransfersGraphClient, from time.Time, to time.Time, intermediate *supplyIntermediate) {
+	transfers, err := client.FetchBurns(from, to)
+	if err != nil {
+		sentry.CaptureException(err)
+		log.Fatalln(err)
+		return
+	}
+
+	intermediate.Burned = sumTransfers(transfers)
+}
+func stakeDepositOperation(client *graph.TransfersGraphClient, from time.Time, to time.Time, intermediate *supplyIntermediate) {
+	transfers, err := client.FetchDeposits(from, to)
+	if err != nil {
+		sentry.CaptureException(err)
+		log.Fatalln(err)
+		return
+	}
+
+	intermediate.StakeDeposited = sumTransfers(transfers)
+}
+func stakeWithdrawOperation(client *graph.TransfersGraphClient, from time.Time, to time.Time, intermediate *supplyIntermediate) {
+	transfers, err := client.FetchWithdraws(from, to)
+	if err != nil {
+		sentry.CaptureException(err)
+		log.Fatalln(err)
+		return
+	}
+
+	intermediate.StakeWithdrawn = sumTransfers(transfers)
+}
+
+func sumTransfers(transfers []graph.Transfer) float64 {
+	total := big.NewInt(0)
+
+	for _, transfer := range transfers {
+		total = big.NewInt(0).Add(total, transfer.Amount)
+	}
+
+	totalDec := utils.ToDecimal(total, 18)
+	totalF, _ := totalDec.Float64()
+
+	return totalF
 }

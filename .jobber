@@ -58,19 +58,9 @@ jobs:
             - *log
         notifyOnFailure:
             - *log
-    CollectFlySupply:
-        cmd: "/home/jobberuser/hopper-shopper-collector/collect fly-supply"
-        time: "0 3 * * * *"
-        onError: Continue
-        notifyOnSuccess:
-            - *log
-        notifyOnError:
-            - *log
-        notifyOnFailure:
-            - *log
     CollectHopperHolders:
         cmd: "/home/jobberuser/hopper-shopper-collector/collect hopper-holders"
-        time: "0 4 * * * *"
+        time: "0 3 * * * *"
         onError: Continue
         notifyOnSuccess:
             - *log
@@ -80,6 +70,16 @@ jobs:
             - *log
     CollectHoppersActivity:
         cmd: "/home/jobberuser/hopper-shopper-collector/collect hoppers-activity"
+        time: "0 4 */4 * * *"
+        onError: Continue
+        notifyOnSuccess:
+            - *log
+        notifyOnError:
+            - *log
+        notifyOnFailure:
+            - *log
+    CollectFlySupply:
+        cmd: "/home/jobberuser/hopper-shopper-collector/collect fly-supply"
         time: "0 5 */4 * * *"
         onError: Continue
         notifyOnSuccess:

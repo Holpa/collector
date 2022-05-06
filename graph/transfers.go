@@ -7,13 +7,18 @@ import (
 	"time"
 
 	"github.com/machinebox/graphql"
-	"github.com/shopspring/decimal"
 	"github.com/steschwa/hopper-analytics-collector/constants"
 )
 
 type (
 	TransfersGraphClient struct {
 		Graph *graphql.Client
+	}
+
+	TransfersFilter struct {
+		Direction constants.TransferDirection
+		User      string
+		MethodId  constants.TransferMethodId
 	}
 )
 
@@ -27,16 +32,59 @@ func NewTransfersGraphClient() *TransfersGraphClient {
 // Queries
 // ----------------------------------------
 
-var GET_STAKED_TRANSFERS = fmt.Sprintf(`
-query($before: Int!, $methodId: String!) {
+var MINTS_QUERY = fmt.Sprintf(`
+query($after: Int!, $before: Int!) {
+	transfers(
+		where: {
+			from: "%s",
+			timestamp_gt: $after,
+			timestamp_lt: $before
+		}
+		orderBy: timestamp
+		orderDirection: asc
+		first: 1000
+	) {
+		from
+		to
+		methodId
+		contract
+		amount
+		timestamp
+	}
+}`, constants.NULL_ADDRESS)
+
+var BURNS_QUERY = fmt.Sprintf(`
+query($after: Int!, $before: Int!) {
+	transfers(
+		where: {
+			to: "%s",
+			timestamp_gt: $after,
+			timestamp_lt: $before
+		}
+		orderBy: timestamp
+		orderDirection: asc
+		first: 1000
+	) {
+		from
+		to
+		methodId
+		contract
+		amount
+		timestamp
+	}
+}`, constants.NULL_ADDRESS)
+
+var STAKE_TRANSFERS = fmt.Sprintf(`
+query($after: Int!, $before: Int!, $methodId: String!) {
 	transfers(
 		where: {
 			contract: "%s",
 			methodId: $methodId,
+			timestamp_gt: $after,
 			timestamp_lt: $before
 		},
 		orderBy: timestamp,
-		orderDirection: desc,
+		orderDirection: asc,
 		first: 1000
 	) {
 		from
@@ -101,42 +149,39 @@ func parseTransfer(transferGraph TransferGraph) Transfer {
 }
 
 // ----------------------------------------
-// Query filters
-// ----------------------------------------
-
-type (
-	TransfersFilter struct {
-		Direction constants.TransferDirection
-		User      string
-		MethodId  constants.TransferMethodId
-	}
-)
-
-// ----------------------------------------
 // Query functions
 // ----------------------------------------
 
-func (client *TransfersGraphClient) FetchTransfers(req *graphql.Request) ([]Transfer, error) {
+func (client *TransfersGraphClient) FetchTransfers(req *graphql.Request, from time.Time, to time.Time) ([]Transfer, error) {
 	transfers := []Transfer{}
 
-	queryBeforeTs := time.Now()
+	queryAfterTs := from
 	for {
-		unixTs := queryBeforeTs.Unix()
-		req.Var("before", unixTs)
+		req.Var("after", queryAfterTs.Unix())
+		req.Var("before", to.Unix())
 
 		res := &TransfersResponse{}
 		if err := client.Graph.Run(context.Background(), req, res); err != nil {
 			return []Transfer{}, err
 		}
 
+		maxTimestamp := time.Unix(0, 0)
 		for _, transferGraph := range res.Transfers {
 			transfer := parseTransfer(transferGraph)
 			transfers = append(transfers, transfer)
 
-			queryBeforeTs = transfer.Timestamp
+			queryAfterTs = transfer.Timestamp
+
+			if transfer.Timestamp.After(maxTimestamp) {
+				maxTimestamp = transfer.Timestamp
+			}
 		}
 
 		if len(res.Transfers) < 1000 {
+			break
+		}
+
+		if maxTimestamp.After(to) {
 			break
 		}
 	}
@@ -144,54 +189,8 @@ func (client *TransfersGraphClient) FetchTransfers(req *graphql.Request) ([]Tran
 	return transfers, nil
 }
 
-func (client *TransfersGraphClient) FetchDepositTransfers() ([]Transfer, error) {
-	req := graphql.NewRequest(GET_STAKED_TRANSFERS)
-	req.Var("methodId", constants.METHOD_ID_FLY_STAKE_DEPOSIT)
-	return client.FetchTransfers(req)
-}
-
-func (client *TransfersGraphClient) FetchTotalDeposited() (decimal.Decimal, error) {
-	depositTransfers, err := client.FetchDepositTransfers()
-	if err != nil {
-		return decimal.NewFromInt(0), err
-	}
-
-	total := decimal.NewFromInt(0)
-	for _, transfer := range depositTransfers {
-		amountDec, err := decimal.NewFromString(transfer.Amount.String())
-		if err != nil {
-			return decimal.NewFromInt(0), err
-		}
-		total = total.Add(amountDec)
-	}
-
-	return total, nil
-}
-
-func (client *TransfersGraphClient) FetchWithdrawTransfers() ([]Transfer, error) {
-	req := graphql.NewRequest(GET_STAKED_TRANSFERS)
-	req.Var("methodId", constants.METHOD_ID_FLY_STAKE_WITHDRAW)
-	return client.FetchTransfers(req)
-}
-
-func (client *TransfersGraphClient) FetchTotalWithdrawn() (decimal.Decimal, error) {
-	withdrawTransfers, err := client.FetchWithdrawTransfers()
-	if err != nil {
-		return decimal.NewFromInt(0), err
-	}
-
-	total := decimal.NewFromInt(0)
-	for _, transfer := range withdrawTransfers {
-		amountDec, err := decimal.NewFromString(transfer.Amount.String())
-		if err != nil {
-			return decimal.NewFromInt(0), err
-		}
-		total = total.Add(amountDec)
-	}
-
-	return total, nil
-}
-
+// REFACTOR Why? Ugly + hard to grasp 🤡
+// Maybe refactor so the caller has to use `FetchTransfers` directly and create query on it's own
 func (client *TransfersGraphClient) FetchFilteredTransfers(filter TransfersFilter) ([]Transfer, error) {
 	parameters := map[string]string{
 		"$before": "Int!",
@@ -251,5 +250,27 @@ func (client *TransfersGraphClient) FetchFilteredTransfers(filter TransfersFilte
 	for key, value := range requestVars {
 		req.Var(key, value)
 	}
-	return client.FetchTransfers(req)
+	return client.FetchTransfers(req, time.Unix(0, 0), time.Now())
+}
+
+func (client *TransfersGraphClient) FetchDeposits(from time.Time, to time.Time) ([]Transfer, error) {
+	req := graphql.NewRequest(STAKE_TRANSFERS)
+	req.Var("methodId", constants.METHOD_ID_FLY_STAKE_DEPOSIT)
+	return client.FetchTransfers(req, from, to)
+}
+
+func (client *TransfersGraphClient) FetchWithdraws(from time.Time, to time.Time) ([]Transfer, error) {
+	req := graphql.NewRequest(STAKE_TRANSFERS)
+	req.Var("methodId", constants.METHOD_ID_FLY_STAKE_WITHDRAW)
+	return client.FetchTransfers(req, from, to)
+}
+
+func (client *TransfersGraphClient) FetchMints(from time.Time, to time.Time) ([]Transfer, error) {
+	req := graphql.NewRequest(MINTS_QUERY)
+	return client.FetchTransfers(req, from, to)
+}
+
+func (client *TransfersGraphClient) FetchBurns(from time.Time, to time.Time) ([]Transfer, error) {
+	req := graphql.NewRequest(BURNS_QUERY)
+	return client.FetchTransfers(req, from, to)
 }
