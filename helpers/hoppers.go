@@ -42,7 +42,9 @@ func HopperToHopperDocument(hopper models.Hopper, rewardsCalculator *RewardsCalc
 		activity = models.HopperActivityForest
 	case constants.ADVENTURE_GREAT_LAKE_CONTRACT:
 		activity = models.HopperActivityGreatLake
-	case constants.BREEDING_CONTRACT:
+	case constants.BREEDING_CONTRACT_V1:
+		activity = models.HopperActivityBreeding
+	case constants.BREEDING_CONTRACT_V2:
 		activity = models.HopperActivityBreeding
 	case constants.MARKETPLACE_CONTRACT:
 		activity = models.HopperActivityMarketplace
