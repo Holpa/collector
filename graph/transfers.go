@@ -50,6 +50,7 @@ query($after: Int!, $before: Int!) {
 		contract
 		amount
 		timestamp
+		transaction
 	}
 }`, constants.NULL_ADDRESS)
 
@@ -71,6 +72,7 @@ query($after: Int!, $before: Int!) {
 		contract
 		amount
 		timestamp
+		transaction
 	}
 }`, constants.NULL_ADDRESS)
 
@@ -93,6 +95,7 @@ query($after: Int!, $before: Int!, $methodId: String!) {
 		contract
 		amount
 		timestamp
+		transaction
 	}
 }`, constants.VE_FLY_CONTRACT)
 
@@ -102,23 +105,25 @@ query($after: Int!, $before: Int!, $methodId: String!) {
 
 type (
 	TransferGraph struct {
-		From      string `json:"from"`
-		To        string `json:"to"`
-		MethodId  string `json:"methodId"`
-		Contract  string `json:"contract"`
-		Amount    string `json:"amount"`
-		Timestamp string `json:"timestamp"`
+		From        string `json:"from"`
+		To          string `json:"to"`
+		MethodId    string `json:"methodId"`
+		Contract    string `json:"contract"`
+		Amount      string `json:"amount"`
+		Timestamp   string `json:"timestamp"`
+		Transaction string `json:"transaction"`
 	}
 	TransfersResponse struct {
 		Transfers []TransferGraph `json:"transfers"`
 	}
 	Transfer struct {
-		From      string
-		To        string
-		MethodId  string
-		Contract  string
-		Amount    *big.Int
-		Timestamp time.Time
+		From        string
+		To          string
+		MethodId    string
+		Contract    string
+		Amount      *big.Int
+		Timestamp   time.Time
+		Transaction string
 	}
 )
 
@@ -139,12 +144,13 @@ type (
 
 func parseTransfer(transferGraph TransferGraph) Transfer {
 	return Transfer{
-		From:      transferGraph.From,
-		To:        transferGraph.To,
-		MethodId:  transferGraph.MethodId,
-		Contract:  transferGraph.Contract,
-		Amount:    ParseBigInt(transferGraph.Amount),
-		Timestamp: time.Unix(int64(ParseUInt(transferGraph.Timestamp)), 0),
+		From:        transferGraph.From,
+		To:          transferGraph.To,
+		MethodId:    transferGraph.MethodId,
+		Contract:    transferGraph.Contract,
+		Amount:      ParseBigInt(transferGraph.Amount),
+		Timestamp:   time.Unix(int64(ParseUInt(transferGraph.Timestamp)), 0),
+		Transaction: transferGraph.Transaction,
 	}
 }
 
