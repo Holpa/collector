@@ -38,6 +38,7 @@ func toStringSlice[T constants.CoinGeckoId | constants.CoinGeckoCurrency](value 
 // ----------------------------------------
 // Response data
 // ----------------------------------------
+
 type (
 	CurrentPrice     map[constants.CoinGeckoCurrency]float64
 	CurrentPriceData map[constants.CoinGeckoId]CurrentPrice
