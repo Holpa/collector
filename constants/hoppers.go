@@ -7,4 +7,5 @@ const (
 	HOPPERS_FLY_TS = 1646764726
 
 	FLY_TRANSFERS_GRAPH_URL = "https://api.thegraph.com/subgraphs/name/steschwa/hoppers-fly"
+	CUSTOM_GRAPH_URL        = "https://api.thegraph.com/subgraphs/name/steschwa/hoppersgame"
 )

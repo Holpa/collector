@@ -5,12 +5,12 @@ import "time"
 type (
 	FlySupplyDocument struct {
 		Timestamp time.Time `bson:"timestamp"`
-		Supply    float64   `bson:"supply"`
+		Minted    float64   `bson:"minted"`
 		Burned    float64   `bson:"burned"`
 		// Supply - Burned
-		Available float64 `bson:"available"`
-		Staked    float64 `bson:"staked"`
-		// Available - Staked
+		Circulating float64 `bson:"circulating"`
+		Staked      float64 `bson:"staked"`
+		// Circulating - Staked
 		Free float64 `bson:"free"`
 	}
 )
