@@ -2,7 +2,6 @@ package graph
 
 import (
 	"context"
-	"math/big"
 	"time"
 
 	"github.com/machinebox/graphql"
@@ -26,16 +25,11 @@ func NewFlyGraphClient() *FlyGraphClient {
 // ----------------------------------------
 
 var MINTS_DAY_DATAS = `
-query latestMintsDayDatas(
-	$startTimestamp: BigInt!
-) {
+query {
 	flyMintsDayDatas(
 		orderBy: id
 		orderDirection: asc
-		first: 1
-		where: {
-			startTimestamp: $startTimestamp
-		}
+		first: 1000
 	) {
 		id
 		startTimestamp
@@ -44,16 +38,11 @@ query latestMintsDayDatas(
 }`
 
 var BURNS_DAY_DATAS = `
-query latestBurnsDayDatas(
-	$startTimestamp: BigInt!
-) {
+query {
 	flyBurnsDayDatas(
 		orderBy: id
 		orderDirection: asc
-		first: 1
-		where: {
-			startTimestamp: $startTimestamp
-		}
+		first: 1000
 	) {
 		id
 		startTimestamp
@@ -61,17 +50,25 @@ query latestBurnsDayDatas(
 	}
 }`
 
+var CIRCULATING_DAY_DATAS = `
+query {
+	flyCirculatingDayDatas(
+		orderBy: id
+		orderDirection: asc
+		first: 1000
+	) {
+		id
+		startTimestamp
+		circulating
+	}
+}`
+
 var STAKE_DEPOSIT_DAY_DATAS = `
-query latestStakeDepositDayDatas(
-	$startTimestamp: BigInt!
-) {
+query {
 	flyStakeDepositDayDatas(
 		orderBy: id
 		orderDirection: asc
-		first: 1
-		where: {
-			startTimestamp: $startTimestamp
-		}
+		first: 1000
 	) {
 		id
 		startTimestamp
@@ -80,16 +77,11 @@ query latestStakeDepositDayDatas(
 }`
 
 var STAKE_WITHDRAW_DAY_DATAS = `
-query latestWithdrawDayDatas(
-	$startTimestamp: BigInt!
-) {
+query {
 	flyStakeWithdrawDayDatas(
 		orderBy: id
 		orderDirection: asc
-		first: 1
-		where: {
-			startTimestamp: $startTimestamp
-		}
+		first: 1000
 	) {
 		id
 		startTimestamp
@@ -106,18 +98,10 @@ type (
 		Id             string `json:"id"`
 		StartTimestamp string `json:"startTimestamp"`
 	}
-	DayData struct {
-		Id             uint
-		StartTimestamp time.Time
-	}
 
 	MintDayDataGraph struct {
 		DayDataGraph
 		Minted string `json:"minted"`
-	}
-	MintDayData struct {
-		DayData
-		Minted *big.Int
 	}
 	MintsDayDataResponse struct {
 		FlyMintsDayDatas []MintDayDataGraph `json:"flyMintsDayDatas"`
@@ -127,21 +111,21 @@ type (
 		DayDataGraph
 		Burned string `json:"burned"`
 	}
-	BurnDayData struct {
-		DayData
-		Burned *big.Int
-	}
 	BurnsDayDataResponse struct {
 		FlyBurnsDayDatas []BurnDayDataGraph `json:"flyBurnsDayDatas"`
+	}
+
+	CirculatingDayDataGraph struct {
+		DayDataGraph
+		Circulating string `json:"circulating"`
+	}
+	CirculatingDayDataResponse struct {
+		FlyCirculatingDayDatas []CirculatingDayDataGraph `json:"flyCirculatingDayDatas"`
 	}
 
 	StakeDepositDayDataGraph struct {
 		DayDataGraph
 		Deposited string `json:"deposited"`
-	}
-	StakeDepositDayData struct {
-		DayData
-		Deposited *big.Int
 	}
 	StakeDepositDayDataResponse struct {
 		FlyStakeDepositDayDatas []StakeDepositDayDataGraph `json:"flyStakeDepositDayDatas"`
@@ -150,10 +134,6 @@ type (
 	StakeWithdrawDayDataGraph struct {
 		DayDataGraph
 		Withdrawn string `json:"withdrawn"`
-	}
-	StakeWithdrawDayData struct {
-		DayData
-		Withdrawn *big.Int
 	}
 	StakeWithdrawDayDataResponse struct {
 		FlyStakeWithdrawDayDatas []StakeWithdrawDayDataGraph `json:"flyStakeWithdrawDayDatas"`
@@ -182,6 +162,15 @@ func parseBurnDayData(graph BurnDayDataGraph) BurnDayData {
 		Burned: ParseBigInt(graph.Burned),
 	}
 }
+func parseCirculatingDayData(graph CirculatingDayDataGraph) CirculatingDayData {
+	return CirculatingDayData{
+		DayData: DayData{
+			Id:             ParseUInt(graph.Id),
+			StartTimestamp: time.Unix(int64(ParseUInt(graph.StartTimestamp)), 0),
+		},
+		Circulating: ParseBigInt(graph.Circulating),
+	}
+}
 func parseStakeDepositDayData(graph StakeDepositDayDataGraph) StakeDepositDayData {
 	return StakeDepositDayData{
 		DayData: DayData{
@@ -205,13 +194,12 @@ func parseStakeWithdrawDayData(graph StakeWithdrawDayDataGraph) StakeWithdrawDay
 // Query functions
 // ----------------------------------------
 
-func (client *FlyGraphClient) FetchMintsDayData(startTimestamp time.Time) (MintDayData, error) {
+func (client *FlyGraphClient) FetchMintsDayData() ([]MintDayData, error) {
 	req := graphql.NewRequest(MINTS_DAY_DATAS)
-	req.Var("startTimestamp", startTimestamp.Unix())
 
 	res := MintsDayDataResponse{}
 	if err := client.Graph.Run(context.Background(), req, &res); err != nil {
-		return MintDayData{}, err
+		return []MintDayData{}, err
 	}
 
 	dayDatas := make([]MintDayData, len(res.FlyMintsDayDatas))
@@ -219,20 +207,15 @@ func (client *FlyGraphClient) FetchMintsDayData(startTimestamp time.Time) (MintD
 		dayDatas[i] = parseMintDayData(graph)
 	}
 
-	if len(dayDatas) == 0 {
-		return MintDayData{}, nil
-	}
-
-	return dayDatas[0], nil
+	return dayDatas, nil
 }
 
-func (client *FlyGraphClient) FetchBurnsDayData(startTimestamp time.Time) (BurnDayData, error) {
+func (client *FlyGraphClient) FetchBurnsDayData() ([]BurnDayData, error) {
 	req := graphql.NewRequest(BURNS_DAY_DATAS)
-	req.Var("startTimestamp", startTimestamp.Unix())
 
 	res := BurnsDayDataResponse{}
 	if err := client.Graph.Run(context.Background(), req, &res); err != nil {
-		return BurnDayData{}, err
+		return []BurnDayData{}, err
 	}
 
 	dayDatas := make([]BurnDayData, len(res.FlyBurnsDayDatas))
@@ -240,20 +223,31 @@ func (client *FlyGraphClient) FetchBurnsDayData(startTimestamp time.Time) (BurnD
 		dayDatas[i] = parseBurnDayData(graph)
 	}
 
-	if len(dayDatas) == 0 {
-		return BurnDayData{}, nil
-	}
-
-	return dayDatas[0], nil
+	return dayDatas, nil
 }
 
-func (client *FlyGraphClient) FetchStakeDepositDayData(startTimestamp time.Time) (StakeDepositDayData, error) {
+func (client *FlyGraphClient) FetchCirculatingDayData() ([]CirculatingDayData, error) {
+	req := graphql.NewRequest(CIRCULATING_DAY_DATAS)
+
+	res := CirculatingDayDataResponse{}
+	if err := client.Graph.Run(context.Background(), req, &res); err != nil {
+		return []CirculatingDayData{}, err
+	}
+
+	dayDatas := make([]CirculatingDayData, len(res.FlyCirculatingDayDatas))
+	for i, graph := range res.FlyCirculatingDayDatas {
+		dayDatas[i] = parseCirculatingDayData(graph)
+	}
+
+	return dayDatas, nil
+}
+
+func (client *FlyGraphClient) FetchStakeDepositDayData() ([]StakeDepositDayData, error) {
 	req := graphql.NewRequest(STAKE_DEPOSIT_DAY_DATAS)
-	req.Var("startTimestamp", startTimestamp.Unix())
 
 	res := StakeDepositDayDataResponse{}
 	if err := client.Graph.Run(context.Background(), req, &res); err != nil {
-		return StakeDepositDayData{}, err
+		return []StakeDepositDayData{}, err
 	}
 
 	dayDatas := make([]StakeDepositDayData, len(res.FlyStakeDepositDayDatas))
@@ -261,20 +255,15 @@ func (client *FlyGraphClient) FetchStakeDepositDayData(startTimestamp time.Time)
 		dayDatas[i] = parseStakeDepositDayData(graph)
 	}
 
-	if len(dayDatas) == 0 {
-		return StakeDepositDayData{}, nil
-	}
-
-	return dayDatas[0], nil
+	return dayDatas, nil
 }
 
-func (client *FlyGraphClient) FetchStakeWithdrawDayData(startTimestamp time.Time) (StakeWithdrawDayData, error) {
+func (client *FlyGraphClient) FetchStakeWithdrawDayData() ([]StakeWithdrawDayData, error) {
 	req := graphql.NewRequest(STAKE_WITHDRAW_DAY_DATAS)
-	req.Var("startTimestamp", startTimestamp.Unix())
 
 	res := StakeWithdrawDayDataResponse{}
 	if err := client.Graph.Run(context.Background(), req, &res); err != nil {
-		return StakeWithdrawDayData{}, err
+		return []StakeWithdrawDayData{}, err
 	}
 
 	dayDatas := make([]StakeWithdrawDayData, len(res.FlyStakeWithdrawDayDatas))
@@ -282,9 +271,5 @@ func (client *FlyGraphClient) FetchStakeWithdrawDayData(startTimestamp time.Time
 		dayDatas[i] = parseStakeWithdrawDayData(graph)
 	}
 
-	if len(dayDatas) == 0 {
-		return StakeWithdrawDayData{}, nil
-	}
-
-	return dayDatas[0], nil
+	return dayDatas, nil
 }
