@@ -38,8 +38,8 @@ jobs:
             - *log
         notifyOnFailure:
             - *log
-    CollectBaseShares:
-        cmd: "/home/jobberuser/hopper-shopper-collector/collect base-shares"
+    CollectFlySupply:
+        cmd: "/home/jobberuser/hopper-shopper-collector/collect fly-supply"
         time: "0 1 * * * *"
         onError: Continue
         notifyOnSuccess:
@@ -78,9 +78,9 @@ jobs:
             - *log
         notifyOnFailure:
             - *log
-    CollectFlySupply:
-        cmd: "/home/jobberuser/hopper-shopper-collector/collect fly-supply"
-        time: "0 5 */4 * * *"
+    CollectBaseShares:
+        cmd: "/home/jobberuser/hopper-shopper-collector/collect base-shares"
+        time: "0 5 * * * *"
         onError: Continue
         notifyOnSuccess:
             - *log
