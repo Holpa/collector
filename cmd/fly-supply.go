@@ -130,7 +130,7 @@ var flySupplyCommand = &cobra.Command{
 			doc := models.FlySupplyDocument{
 				Timestamp:   timestamp,
 				Minted:      mintedAccumulator,
-				Burned:      burnedAccumulator,
+				Burned:      burnedAccumulator - getBurnedFlyDecrement(timestamp),
 				Circulating: actualCirculating,
 				Staked:      staked,
 				Free:        free,
@@ -159,6 +159,16 @@ func getVestedFlyDecrement(now time.Time) float64 {
 	}
 
 	return float64(decrement)
+}
+
+func getBurnedFlyDecrement(now time.Time) float64 {
+	decrement := 0.0
+
+	if now.After(teamStart) {
+		decrement += 8_000_000
+	}
+
+	return decrement
 }
 
 func calculateVestedFly(now time.Time, vestedFly float64, vestingStart time.Time, vestedDuration time.Duration) float64 {
