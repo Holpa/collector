@@ -1,7 +1,8 @@
 package constants
 
-const (
-	HOPPERS_GRAPH_URL    = "https://graph.hoppersgame.io/subgraphs/name/hoppers/mainnet"
+const (	
+	// HOPPERS_GRAPH_URL    = "https://graph.hoppersgame.io/subgraphs/name/hoppers/mainnet" // old graph
+	HOPPERS_GRAPH_URL    = "https://graph.hoppersgame.io/subgraphs/name/hoppersV2/mainnet"
 	HOPPERS_TOTAL_SUPPLY = 10_000
 
 	HOPPERS_FLY_TS = 1646764726
